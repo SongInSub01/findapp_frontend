@@ -160,7 +160,7 @@ class _HeroSection extends StatelessWidget {
           child: Text(
             'BLE 기반 분실물 보호 서비스',
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.teal,
+              color: AppColors.primaryDark,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -173,7 +173,7 @@ class _HeroSection extends StatelessWidget {
             '$greetingName님, 안녕하세요',
             textAlign: TextAlign.center,
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.teal,
+              color: AppColors.primaryDark,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -219,7 +219,7 @@ class _BrandLockup extends StatelessWidget {
               '찾아줘',
               style: AppTextStyles.headline.copyWith(
                 fontSize: 34,
-                color: AppColors.teal,
+                color: AppColors.primaryDark,
                 letterSpacing: -0.7,
               ),
             ),

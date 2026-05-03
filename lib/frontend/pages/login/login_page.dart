@@ -68,7 +68,9 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           Text(
                             '로그인',
-                            style: AppTextStyles.headline.copyWith(fontSize: 24),
+                            style: AppTextStyles.headline.copyWith(
+                              fontSize: 24,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -93,10 +95,14 @@ class _LoginPageState extends State<LoginPage> {
                             decoration: InputDecoration(
                               labelText: '비밀번호',
                               hintText: '비밀번호를 입력해 주세요',
-                              prefixIcon: const Icon(Icons.lock_outline_rounded),
+                              prefixIcon: const Icon(
+                                Icons.lock_outline_rounded,
+                              ),
                               suffixIcon: IconButton(
                                 onPressed: () {
-                                  setState(() => _hidePassword = !_hidePassword);
+                                  setState(
+                                    () => _hidePassword = !_hidePassword,
+                                  );
                                 },
                                 icon: Icon(
                                   _hidePassword
@@ -116,7 +122,9 @@ class _LoginPageState extends State<LoginPage> {
                                     value: _rememberMe,
                                     activeColor: AppColors.teal,
                                     onChanged: (value) {
-                                      setState(() => _rememberMe = value ?? true);
+                                      setState(
+                                        () => _rememberMe = value ?? true,
+                                      );
                                     },
                                   ),
                                   Expanded(
@@ -134,16 +142,57 @@ class _LoginPageState extends State<LoginPage> {
                               Align(
                                 alignment: Alignment.centerRight,
                                 child: TextButton(
-                                  onPressed: _showRecoveryGuide,
+                                  onPressed: _isSubmitting
+                                      ? null
+                                      : _showRecoveryGuide,
                                   child: const Text('비밀번호 찾기'),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
+                          if (_isSubmitting) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FBFF),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: AppColors.borderLight,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.2,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      '로그인 정보를 확인하고 안내 화면으로 이동하고 있습니다.',
+                                      style: AppTextStyles.caption.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           AppPrimaryButton(
-                            label: '로그인하고 시작하기',
-                            icon: Icons.login_rounded,
+                            label: _isSubmitting ? '로그인 중...' : '로그인하고 시작하기',
+                            icon: _isSubmitting
+                                ? Icons.hourglass_top_rounded
+                                : Icons.login_rounded,
                             expanded: true,
                             onPressed: _isSubmitting ? null : _submitLogin,
                           ),
@@ -152,13 +201,17 @@ class _LoginPageState extends State<LoginPage> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEAFBF7),
+                              color: AppColors.surfaceTeal,
                               borderRadius: BorderRadius.circular(16),
                             ),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.lock_outline_rounded, size: 18, color: AppColors.teal),
+                                const Icon(
+                                  Icons.lock_outline_rounded,
+                                  size: 18,
+                                  color: AppColors.teal,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -178,9 +231,11 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 16),
                     Center(
                       child: TextButton(
-                        onPressed: () => Navigator.of(context).pushNamed(
-                          AppRoutes.join,
-                        ),
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => Navigator.of(
+                                context,
+                              ).pushNamed(AppRoutes.join),
                         child: Text(
                           '처음이신가요? 회원가입하기',
                           style: AppTextStyles.body.copyWith(
@@ -201,7 +256,8 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _submitLogin() async {
-    if (_idController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+    if (_idController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
       _showSnackBar('아이디와 비밀번호를 입력해 주세요.');
       return;
     }
@@ -233,9 +289,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _showRecoveryGuide() async {
@@ -270,11 +326,7 @@ class _LoginBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFF8FCFC),
-            Color(0xFFF2FBF8),
-            AppColors.background,
-          ],
+          colors: [Color(0xFFF8FCFC), Color(0xFFF2FBF8), AppColors.background],
         ),
       ),
       child: Stack(
@@ -373,24 +425,22 @@ class _LoginLogo extends StatelessWidget {
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
-          colors: [
-            Color(0xFFFFFFFF),
-            Color(0xFFE9FBF7),
-          ],
+          colors: [Color(0xFFFFFFFF), Color(0xFFE9FBF7)],
         ),
       ),
       child: const Center(
-        child: Icon(Icons.track_changes_rounded, color: AppColors.teal, size: 28),
+        child: Icon(
+          Icons.track_changes_rounded,
+          color: AppColors.teal,
+          size: 28,
+        ),
       ),
     );
   }
 }
 
 class _LoginOrb extends StatelessWidget {
-  const _LoginOrb({
-    required this.size,
-    required this.color,
-  });
+  const _LoginOrb({required this.size, required this.color});
 
   final double size;
   final Color color;
@@ -403,12 +453,7 @@ class _LoginOrb extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [
-              color,
-              color.withValues(alpha: 0),
-            ],
-          ),
+          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
         ),
       ),
     );

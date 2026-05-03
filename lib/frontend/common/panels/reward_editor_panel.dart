@@ -50,10 +50,19 @@ class _RewardEditorPanelState extends State<_RewardEditorPanel> {
   @override
   void initState() {
     super.initState();
-    final initialItem = widget.state.lostItems.firstWhere(
+    final candidates = widget.state.lostItems.where(
       (item) => item.id == widget.initialItemId,
-      orElse: () => widget.state.lostItems.first,
-    );
+    ).toList();
+    final initialItem = candidates.isNotEmpty
+        ? candidates.first
+        : (widget.state.lostItems.isNotEmpty
+            ? widget.state.lostItems.first
+            : null);
+    if (initialItem == null) {
+      _selectedItemId = '';
+      _rewardController = TextEditingController(text: '0');
+      return;
+    }
     _selectedItemId = initialItem.id;
     _rewardController = TextEditingController(text: initialItem.reward.toString());
   }
@@ -66,7 +75,11 @@ class _RewardEditorPanelState extends State<_RewardEditorPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedItem = widget.state.lostItems.firstWhere((item) => item.id == _selectedItemId);
+    final selectedCandidates = widget.state.lostItems.where((item) => item.id == _selectedItemId).toList();
+    if (selectedCandidates.isEmpty) {
+      return const Center(child: Text('등록된 분실물이 없습니다.'));
+    }
+    final selectedItem = selectedCandidates.first;
     return AppPanelScaffold(
       title: '사례금 등록',
       subtitle: '분실물별 사례금을 조정하고 채팅 화면에도 동일하게 반영합니다.',
@@ -83,7 +96,11 @@ class _RewardEditorPanelState extends State<_RewardEditorPanel> {
               if (value == null) {
                 return;
               }
-              final item = widget.state.lostItems.firstWhere((entry) => entry.id == value);
+              final items = widget.state.lostItems.where((entry) => entry.id == value).toList();
+              if (items.isEmpty) {
+                return;
+              }
+              final item = items.first;
               setState(() {
                 _selectedItemId = value;
                 _rewardController.text = item.reward.toString();

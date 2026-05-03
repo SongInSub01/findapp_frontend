@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
 import 'package:my_flutter_starter/frontend/common/resources/app_assets.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_colors.dart';
+import 'package:my_flutter_starter/frontend/common/theme/app_radii.dart';
+import 'package:my_flutter_starter/frontend/common/theme/app_spacing.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_text_styles.dart';
 
 class PanelEmpty extends StatelessWidget {
@@ -21,10 +23,10 @@ class PanelEmpty extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxLarge),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppRadii.extraLarge),
       ),
       child: Column(
         children: [
@@ -63,10 +65,10 @@ class PanelInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.large),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: AppColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppRadii.large),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,7 +78,7 @@ class PanelInfoCard extends StatelessWidget {
             height: 42,
             decoration: BoxDecoration(
               color: iconColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(AppRadii.small),
             ),
             child: Icon(icon, color: iconColor),
           ),
@@ -85,7 +87,12 @@ class PanelInfoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+                Text(
+                  title,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(body, style: AppTextStyles.caption),
               ],
@@ -100,11 +107,7 @@ class PanelInfoCard extends StatelessWidget {
 }
 
 class FaqTile extends StatelessWidget {
-  const FaqTile({
-    required this.question,
-    required this.answer,
-    super.key,
-  });
+  const FaqTile({required this.question, required this.answer, super.key});
 
   final String question;
   final String answer;
@@ -113,18 +116,27 @@ class FaqTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: AppColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppRadii.large),
       ),
       child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        tilePadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.large,
+          vertical: 2,
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(
+          AppSpacing.large,
+          0,
+          AppSpacing.large,
+          AppSpacing.large,
+        ),
         iconColor: AppColors.primary,
         collapsedIconColor: AppColors.textSecondary,
-        title: Text(question, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
-        children: [
-          Text(answer, style: AppTextStyles.caption),
-        ],
+        title: Text(
+          question,
+          style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+        ),
+        children: [Text(answer, style: AppTextStyles.caption)],
       ),
     );
   }
@@ -155,10 +167,10 @@ class AssetOptionSelector extends StatelessWidget {
           onTap: () => onSelected(assetPath),
           child: Container(
             width: 108,
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.small),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
+              color: AppColors.surfaceRaised,
+              borderRadius: BorderRadius.circular(AppRadii.large),
               border: Border.all(
                 color: isSelected ? AppColors.primary : AppColors.border,
                 width: isSelected ? 1.5 : 1,
@@ -167,7 +179,7 @@ class AssetOptionSelector extends StatelessWidget {
             child: Column(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadii.xSmall),
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: Image.asset(
@@ -175,7 +187,7 @@ class AssetOptionSelector extends StatelessWidget {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: AppColors.borderLight,
+                          color: AppColors.borderSoft,
                           alignment: Alignment.center,
                           child: const Icon(
                             Icons.broken_image_outlined,
@@ -192,7 +204,9 @@ class AssetOptionSelector extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.caption.copyWith(
-                    color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

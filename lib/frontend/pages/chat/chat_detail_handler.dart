@@ -12,6 +12,8 @@ class ChatDetailHandler {
     required this.state,
     required this.threadId,
     required this.messageController,
+    required this.isSendingMessage,
+    required this.onSendingMessageChanged,
   });
 
   final BuildContext context;
@@ -19,6 +21,8 @@ class ChatDetailHandler {
   final AppState state;
   final String threadId;
   final TextEditingController messageController;
+  final bool isSendingMessage;
+  final ValueChanged<bool> onSendingMessageChanged;
 
   void close() {
     Navigator.of(context).pop();
@@ -32,7 +36,9 @@ class ChatDetailHandler {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     }
   }
@@ -45,16 +51,22 @@ class ChatDetailHandler {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     }
   }
 
   Future<void> sendMessage() async {
+    if (isSendingMessage) {
+      return;
+    }
     final text = messageController.text.trim();
     if (text.isEmpty) {
       return;
     }
+    onSendingMessageChanged(true);
     try {
       await controller.sendMessage(threadId, text);
       messageController.clear();
@@ -63,12 +75,17 @@ class ChatDetailHandler {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
+    } finally {
+      onSendingMessageChanged(false);
     }
   }
 
   Future<void> showActions(ChatThread thread) async {
+    FocusManager.instance.primaryFocus?.unfocus();
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -97,7 +114,11 @@ class ChatDetailHandler {
                         return;
                       }
                       ScaffoldMessenger.of(sheetContext).showSnackBar(
-                        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+                        SnackBar(
+                          content: Text(
+                            error.toString().replaceFirst('Exception: ', ''),
+                          ),
+                        ),
                       );
                     }
                   },
@@ -122,6 +143,7 @@ class ChatDetailHandler {
   }
 
   Future<void> showReportDialog(String targetThreadId) async {
+    FocusManager.instance.primaryFocus?.unfocus();
     String reason = '욕설 또는 비매너 응답';
     await showDialog<void>(
       context: context,
@@ -131,7 +153,10 @@ class ChatDetailHandler {
           content: DropdownButtonFormField<String>(
             initialValue: reason,
             items: const [
-              DropdownMenuItem(value: '욕설 또는 비매너 응답', child: Text('욕설 또는 비매너 응답')),
+              DropdownMenuItem(
+                value: '욕설 또는 비매너 응답',
+                child: Text('욕설 또는 비매너 응답'),
+              ),
               DropdownMenuItem(value: '허위 제보', child: Text('허위 제보')),
               DropdownMenuItem(value: '사진 승인 악용', child: Text('사진 승인 악용')),
             ],
@@ -142,11 +167,17 @@ class ChatDetailHandler {
             },
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('취소')),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
             FilledButton(
               onPressed: () async {
                 try {
-                  await controller.submitReport(threadId: targetThreadId, reason: reason);
+                  await controller.submitReport(
+                    threadId: targetThreadId,
+                    reason: reason,
+                  );
                   if (!context.mounted) {
                     return;
                   }
@@ -156,7 +187,11 @@ class ChatDetailHandler {
                     return;
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+                    SnackBar(
+                      content: Text(
+                        error.toString().replaceFirst('Exception: ', ''),
+                      ),
+                    ),
                   );
                 }
               },

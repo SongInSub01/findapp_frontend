@@ -15,6 +15,7 @@ class ChatDetailBody extends StatelessWidget {
     required this.state,
     required this.threadId,
     required this.messageController,
+    required this.isSendingMessage,
     required this.handler,
     super.key,
   });
@@ -22,12 +23,55 @@ class ChatDetailBody extends StatelessWidget {
   final AppState state;
   final String threadId;
   final TextEditingController messageController;
+  final bool isSendingMessage;
   final ChatDetailHandler handler;
 
   @override
   Widget build(BuildContext context) {
-    final thread = state.chatThreads.firstWhere((item) => item.id == threadId);
-    final itemCandidates = state.lostItems.where((entry) => entry.id == thread.itemId);
+    final threadCandidates = state.chatThreads
+        .where((item) => item.id == threadId)
+        .toList();
+    if (threadCandidates.isEmpty) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 44,
+                    color: AppColors.textTertiary,
+                  ),
+                  const SizedBox(height: 12),
+                  Text('채팅방을 찾지 못했습니다.', style: AppTextStyles.subtitle),
+                  const SizedBox(height: 6),
+                  Text(
+                    '대화방이 삭제되었거나 아직 생성되지 않았습니다.',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySecondary.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
+                    onPressed: handler.close,
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    label: const Text('채팅 목록으로'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    final thread = threadCandidates.first;
+    final itemCandidates = state.lostItems
+        .where((entry) => entry.id == thread.itemId)
+        .toList();
     final item = itemCandidates.isEmpty ? null : itemCandidates.first;
     final canApprove = thread.photoStatus == PhotoAccessStatus.pending;
 
@@ -78,8 +122,6 @@ class ChatDetailBody extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(thread.itemTitle, style: AppTextStyles.subtitle),
-                        const SizedBox(height: 4),
                         StatusBadge(status: thread.itemStatus, small: true),
                         if (thread.reward != null) ...[
                           const SizedBox(height: 6),
@@ -91,6 +133,17 @@ class ChatDetailBody extends StatelessWidget {
                             ),
                           ),
                         ],
+                        const SizedBox(height: 6),
+                        Text(
+                          thread.photoStatus == PhotoAccessStatus.approved
+                              ? '사진은 지금 바로 확인할 수 있습니다.'
+                              : thread.photoStatus == PhotoAccessStatus.pending
+                              ? '사진 승인 대기 중입니다.'
+                              : '사진은 잠금 상태입니다.',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -109,7 +162,10 @@ class ChatDetailBody extends StatelessWidget {
                         ),
                       if (thread.photoStatus == PhotoAccessStatus.approved)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.greenBg,
                             borderRadius: BorderRadius.circular(999),
@@ -128,44 +184,6 @@ class ChatDetailBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            if (thread.photoStatus != PhotoAccessStatus.approved)
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: thread.photoStatus == PhotoAccessStatus.pending
-                      ? AppColors.yellowBg
-                      : AppColors.borderLight,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      thread.photoStatus == PhotoAccessStatus.pending
-                          ? Icons.hourglass_top_rounded
-                          : Icons.lock_outline,
-                      size: 16,
-                      color: thread.photoStatus == PhotoAccessStatus.pending
-                          ? AppColors.yellow
-                          : AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        thread.photoStatus == PhotoAccessStatus.pending
-                            ? '승인 대기 상태입니다. 주인이 허용하면 즉시 사진을 열람할 수 있습니다.'
-                            : '사진 잠금 상태입니다. 먼저 메시지를 보낸 뒤 사진 요청을 진행해 주세요.',
-                        style: AppTextStyles.caption.copyWith(
-                          color: thread.photoStatus == PhotoAccessStatus.pending
-                              ? AppColors.yellow
-                              : AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            const SizedBox(height: 8),
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -174,14 +192,6 @@ class ChatDetailBody extends StatelessWidget {
                   final message = thread.messages[index];
                   return ChatMessageBubble(message: message);
                 },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: TextButton.icon(
-                onPressed: () => handler.showReportDialog(thread.id),
-                icon: const Icon(Icons.flag_outlined, size: 16),
-                label: const Text('비매너 신고'),
               ),
             ),
             SafeArea(
@@ -203,8 +213,15 @@ class ChatDetailBody extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     IconButton.filled(
-                      onPressed: () => handler.sendMessage(),
-                      icon: const Icon(Icons.send_rounded),
+                      onPressed: isSendingMessage
+                          ? null
+                          : () => handler.sendMessage(),
+                      icon: isSendingMessage
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send_rounded),
                     ),
                   ],
                 ),

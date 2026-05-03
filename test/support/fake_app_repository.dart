@@ -12,17 +12,27 @@ class FakeAppRepository implements AppRepository {
       return AppState.empty();
     }
 
+    final isEmailLogin = loginId.contains('@');
+    final userName = isEmailLogin ? '테스트유저' : loginId;
+    final email = isEmailLogin ? loginId : '$loginId@example.com';
+    final loginName = loginId;
+    final initials = userName.isNotEmpty ? userName.substring(0, 1) : '테';
+    final publicName = userName.isNotEmpty
+        ? '${userName.substring(0, 1)}**'
+        : '테**';
+
     return AppState(
       currentTab: AppTab.main,
       selectedMapTargetId: null,
+      currentLocation: null,
       userProfile: UserProfile(
         id: 'u1',
-        name: '테스트유저',
-        email: 'tester@example.com',
-        loginId: loginId,
-        initials: '테',
+        name: userName,
+        email: email,
+        loginId: loginName,
+        initials: initials,
         photoAssetPath: 'assets/images/icon.png',
-        publicName: '테**',
+        publicName: publicName,
       ),
       myDevices: const [],
       lostItems: const [],
@@ -35,9 +45,21 @@ class FakeAppRepository implements AppRepository {
         soundEnabled: true,
         autoApprovePhotos: false,
         keepPhotoPrivateByDefault: true,
+        defaultReward: 30000,
+        mapTheme: MapThemeMode.light,
       ),
       notifications: const [],
       reports: const [],
+      dashboardSummary: DashboardSummary.empty(),
+      myLostListings: const [],
+      myFoundListings: const [],
+      recentLostListings: const [],
+      recentFoundListings: const [],
+      suggestedMatches: const [],
+      inquiries: const [],
+      availableCategories: const [],
+      availableColors: const [],
+      searchResults: const [],
     );
   }
 
@@ -46,16 +68,20 @@ class FakeAppRepository implements AppRepository {
     required String loginId,
     required String password,
   }) async {
-    if (loginId != 'tester@example.com' || password != 'password123') {
+    if (loginId.isEmpty || password.isEmpty) {
       throw Exception('아이디 또는 비밀번호가 올바르지 않습니다.');
     }
 
-    return const AuthUser(
-      id: 'u1',
-      userName: '테스트유저',
-      email: 'tester@example.com',
-      loginId: 'tester@example.com',
-      publicName: '테**',
+    final isEmailLogin = loginId.contains('@');
+    final userName = isEmailLogin ? '테스트유저' : loginId;
+    final email = isEmailLogin ? loginId : '$loginId@example.com';
+
+    return AuthUser(
+      id: 'u-${loginId.hashCode.abs()}',
+      userName: userName,
+      email: email,
+      loginId: loginId,
+      publicName: userName.isNotEmpty ? '${userName.substring(0, 1)}**' : '테**',
     );
   }
 
@@ -93,6 +119,21 @@ class FakeAppRepository implements AppRepository {
   }
 
   @override
+  Future<CurrentLocation> upsertCurrentLocation({
+    required String loginId,
+    required double latitude,
+    required double longitude,
+    double? accuracyMeters,
+  }) async {
+    return CurrentLocation(
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
+      updatedAt: DateTime.now().toIso8601String(),
+    );
+  }
+
+  @override
   Future<void> updateAlertSettings({
     required String loginId,
     required AlertSettings settings,
@@ -105,10 +146,66 @@ class FakeAppRepository implements AppRepository {
   }) async {}
 
   @override
+  Future<void> saveBleDevice({
+    required String loginId,
+    required BleDevice device,
+    required bool isNew,
+  }) async {}
+
+  @override
+  Future<void> createLostItem({
+    required String loginId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
+    String? photoAssetPath,
+  }) async {}
+
+  @override
+  Future<void> createFoundItem({
+    required String loginId,
+    required String title,
+    required String location,
+    required String description,
+    String? photoAssetPath,
+  }) async {}
+
+  @override
+  Future<List<ListingSummary>> searchListings({
+    required String loginId,
+    required String query,
+    ListingType? itemType,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<List<MatchRecord>> loadMatches({required String loginId}) async {
+    return const [];
+  }
+
+  @override
+  Future<void> submitInquiry({
+    required String loginId,
+    required InquiryCategory category,
+    required String title,
+    required String body,
+    ListingType? relatedItemType,
+    String? relatedItemId,
+  }) async {}
+
+  @override
   Future<void> updateReward({
     required String loginId,
     required String itemId,
     required int reward,
+  }) async {}
+
+  @override
+  Future<void> refreshBleSignal({
+    required String loginId,
+    required String deviceId,
   }) async {}
 
   @override

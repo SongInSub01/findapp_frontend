@@ -23,38 +23,52 @@ class AppShellPage extends StatelessWidget {
 }
 
 class _AppShellBody extends StatelessWidget {
-  const _AppShellBody({
-    required this.controller,
-    required this.state,
-  });
+  const _AppShellBody({required this.controller, required this.state});
 
   final AppController controller;
   final AppState state;
 
   @override
   Widget build(BuildContext context) {
-    final pages = const [
-      MainPage(),
-      MapPage(),
-      ChatPage(),
-      SettingPage(),
-    ];
+    final pages = const [MainPage(), ChatPage(), SettingPage()];
 
     return Scaffold(
       body: IndexedStack(
         index: state.currentTab.index,
-        children: pages,
+        children: [
+          pages[0],
+          MapPage(isVisible: state.currentTab == AppTab.map),
+          pages[1],
+          pages[2],
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         backgroundColor: Colors.white,
         indicatorColor: AppColors.primary.withValues(alpha: 0.12),
         selectedIndex: state.currentTab.index,
-        onDestinationSelected: (index) => controller.switchTab(AppTab.values[index]),
+        onDestinationSelected: (index) =>
+            controller.switchTab(AppTab.values[index]),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: '홈'),
-          NavigationDestination(icon: Icon(Icons.map_outlined), selectedIcon: Icon(Icons.map), label: '지도'),
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline_rounded), selectedIcon: Icon(Icons.chat_bubble), label: '채팅'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: '설정'),
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: '홈',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.map_outlined),
+            selectedIcon: Icon(Icons.map),
+            label: '지도',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: Icon(Icons.chat_bubble),
+            label: '채팅',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: '설정',
+          ),
         ],
       ),
     );

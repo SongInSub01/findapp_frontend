@@ -20,11 +20,8 @@ Future<void> showBleDeviceEditorPanel(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => _BleEditorPanel(
-      controller: controller,
-      state: state,
-      device: device,
-    ),
+    builder: (context) =>
+        _BleEditorPanel(controller: controller, state: state, device: device),
   );
 }
 
@@ -51,6 +48,7 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
   late ItemStatus _status;
   late String _selectedIconKey;
   late String _selectedPhotoAsset;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -58,7 +56,9 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
     final device = widget.device;
     _nameController = TextEditingController(text: device?.name ?? '');
     _codeController = TextEditingController(text: device?.bleCode ?? '');
-    _locationController = TextEditingController(text: device?.location ?? '내 주변 (1m)');
+    _locationController = TextEditingController(
+      text: device?.location ?? '내 주변 (1m)',
+    );
     _distanceController = TextEditingController(text: device?.distance ?? '1m');
     _status = device?.status ?? ItemStatus.safe;
     _selectedIconKey = device?.iconKey ?? 'wallet';
@@ -76,8 +76,9 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final base = widget.device ??
-        const BleDevice(
+    final base =
+        widget.device ??
+        BleDevice(
           id: '',
           name: '새 BLE 기기',
           iconKey: 'wallet',
@@ -85,6 +86,7 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
           location: '내 주변 (1m)',
           lastSeen: '방금 전',
           bleCode: 'BLE-NEW-001',
+          lastSignalAt: DateTime.now().toIso8601String(),
           mapX: 0.42,
           mapY: 0.52,
           distance: '1m',
@@ -105,7 +107,10 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
           const SizedBox(height: 12),
           AppTextField(controller: _distanceController, label: '거리 표시값'),
           const SizedBox(height: 16),
-          Text('기기 유형', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            '기기 유형',
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             initialValue: _selectedIconKey,
@@ -123,7 +128,10 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
             },
           ),
           const SizedBox(height: 16),
-          Text('상태', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            '상태',
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -138,7 +146,10 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
                 .toList(),
           ),
           const SizedBox(height: 16),
-          Text('대표 이미지', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700)),
+          Text(
+            '대표 이미지',
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+          ),
           const SizedBox(height: 8),
           AssetOptionSelector(
             options: AppAssets.devicePhotos,
@@ -147,30 +158,54 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
           ),
           const SizedBox(height: 18),
           AppPrimaryButton(
-            label: '저장',
+            label: _isSaving ? '저장 중...' : '저장',
             expanded: true,
-            onPressed: () {
-              final name = _nameController.text.trim();
-              final code = _codeController.text.trim();
-              widget.controller.saveBleDevice(
-                base.copyWith(
-                  id: widget.device?.id ?? Formatters.uniqueId('d'),
-                  name: name.isEmpty ? base.name : name,
-                  iconKey: _selectedIconKey,
-                  bleCode: code.isEmpty ? base.bleCode : code,
-                  location: _locationController.text.trim().isEmpty
-                      ? base.location
-                      : _locationController.text.trim(),
-                  distance: _distanceController.text.trim().isEmpty
-                      ? base.distance
-                      : _distanceController.text.trim(),
-                  lastSeen: '방금 전',
-                  status: _status,
-                  photoAssetPath: _selectedPhotoAsset,
-                ),
-              );
-              Navigator.of(context).pop();
-            },
+            onPressed: _isSaving
+                ? null
+                : () async {
+                    final name = _nameController.text.trim();
+                    final code = _codeController.text.trim();
+                    setState(() => _isSaving = true);
+                    try {
+                      await widget.controller.saveBleDevice(
+                        base.copyWith(
+                          id: widget.device?.id ?? Formatters.uniqueId('d'),
+                          name: name.isEmpty ? base.name : name,
+                          iconKey: _selectedIconKey,
+                          bleCode: code.isEmpty ? base.bleCode : code,
+                          location: _locationController.text.trim().isEmpty
+                              ? base.location
+                              : _locationController.text.trim(),
+                          distance: _distanceController.text.trim().isEmpty
+                              ? base.distance
+                              : _distanceController.text.trim(),
+                          lastSeen: '방금 전',
+                          lastSignalAt: DateTime.now().toIso8601String(),
+                          status: _status,
+                          photoAssetPath: _selectedPhotoAsset,
+                        ),
+                      );
+                      if (!context.mounted) {
+                        return;
+                      }
+                      Navigator.of(context).pop();
+                    } catch (error) {
+                      if (!context.mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            error.toString().replaceFirst('Exception: ', ''),
+                          ),
+                        ),
+                      );
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isSaving = false);
+                      }
+                    }
+                  },
           ),
         ],
       ),

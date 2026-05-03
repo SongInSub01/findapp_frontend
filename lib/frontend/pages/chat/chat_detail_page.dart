@@ -8,10 +8,7 @@ import 'chat_detail_body.dart';
 import 'chat_detail_handler.dart';
 
 class ChatDetailPage extends StatefulWidget {
-  const ChatDetailPage({
-    required this.threadId,
-    super.key,
-  });
+  const ChatDetailPage({required this.threadId, super.key});
 
   final String threadId;
 
@@ -22,6 +19,7 @@ class ChatDetailPage extends StatefulWidget {
 class _ChatDetailPageState extends State<ChatDetailPage> {
   final TextEditingController _messageController = TextEditingController();
   bool _didMarkRead = false;
+  bool _isSendingMessage = false;
 
   @override
   void didChangeDependencies() {
@@ -29,8 +27,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     if (_didMarkRead) {
       return;
     }
+    final controller = AppScope.controllerOf(context);
+    final threadExists = controller.state.chatThreads.any(
+      (item) => item.id == widget.threadId,
+    );
+    if (!threadExists) {
+      _didMarkRead = true;
+      return;
+    }
     _didMarkRead = true;
-    unawaited(AppScope.controllerOf(context).markChatThreadRead(widget.threadId));
+    unawaited(controller.markChatThreadRead(widget.threadId));
   }
 
   @override
@@ -49,12 +55,19 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
       state: state,
       threadId: widget.threadId,
       messageController: _messageController,
+      isSendingMessage: _isSendingMessage,
+      onSendingMessageChanged: (value) {
+        if (mounted) {
+          setState(() => _isSendingMessage = value);
+        }
+      },
     );
 
     return ChatDetailBody(
       state: state,
       threadId: widget.threadId,
       messageController: _messageController,
+      isSendingMessage: _isSendingMessage,
       handler: handler,
     );
   }

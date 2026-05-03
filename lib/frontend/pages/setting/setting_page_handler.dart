@@ -25,11 +25,23 @@ class SettingPageHandler {
     );
   }
 
-  void testBleDevice(BleDevice device) {
-    controller.testBleDevice(device.id);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${device.name} BLE 테스트를 전송했습니다.')),
-    );
+  Future<void> testBleDevice(BleDevice device) async {
+    try {
+      await controller.testBleDevice(device.id);
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${device.name} BLE 테스트를 전송했습니다.')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   Future<void> updateAlertSettings(AlertSettings settings) async {

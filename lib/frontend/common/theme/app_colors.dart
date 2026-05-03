@@ -4,9 +4,19 @@ import 'package:my_flutter_starter/data/models/app_models.dart';
 
 abstract final class AppColors {
   static const background = Color(0xFFF8FAFC);
+  static const surface = background;
   static const card = Colors.white;
+  static const surfaceRaised = card;
+  static const surfaceSoft = Color(0xFFF1F5F9);
+  static const surfaceBlue = Color(0xFFEFF6FF);
+  static const surfaceTeal = Color(0xFFEAFBF7);
+  static const surfaceSuccess = greenBg;
+  static const surfaceWarning = yellowBg;
+  static const surfaceDanger = redBg;
   static const border = Color(0xFFE2E8F0);
+  static const borderStrong = border;
   static const borderLight = Color(0xFFF1F5F9);
+  static const borderSoft = borderLight;
   static const text = Color(0xFF111827);
   static const textSecondary = Color(0xFF6B7280);
   static const textTertiary = Color(0xFF9CA3AF);

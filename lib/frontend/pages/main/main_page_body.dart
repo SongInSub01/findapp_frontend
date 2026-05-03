@@ -10,22 +10,21 @@ import 'package:my_flutter_starter/frontend/common/widgets/lost_item_card.dart';
 import 'main_page_handler.dart';
 
 class MainPageBody extends StatelessWidget {
-  const MainPageBody({
-    required this.state,
-    required this.handler,
-    super.key,
-  });
+  const MainPageBody({required this.state, required this.handler, super.key});
 
   final AppState state;
   final MainPageHandler handler;
 
   @override
   Widget build(BuildContext context) {
-    final lostCandidates =
-        state.myDevices.where((device) => device.status == ItemStatus.lost);
+    final lostCandidates = state.myDevices.where(
+      (device) => device.status == ItemStatus.lost,
+    );
     final lostDevice = lostCandidates.isEmpty ? null : lostCandidates.first;
-    final unreadNotifications = state.notifications.where((item) => !item.isRead).length;
-
+    final unreadNotifications = state.notifications
+        .where((item) => !item.isRead)
+        .length;
+    final isCompact = MediaQuery.sizeOf(context).width < 390;
     return SafeArea(
       child: CustomScrollView(
         slivers: [
@@ -47,6 +46,7 @@ class MainPageBody extends StatelessWidget {
                       device: lostDevice,
                       onTrackTap: () => handler.trackDevice(lostDevice.id),
                       onDismissTap: () => handler.dismissAlert(lostDevice.id),
+                      isCompact: isCompact,
                     )
                   else
                     _SafeBanner(safeZoneCount: state.safeZones.length),
@@ -62,7 +62,8 @@ class MainPageBody extends StatelessWidget {
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: state.myDevices.length,
-                      separatorBuilder: (context, index) => const SizedBox(width: 12),
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 12),
                       itemBuilder: (context, index) {
                         final device = state.myDevices[index];
                         return DeviceCard(
@@ -73,26 +74,43 @@ class MainPageBody extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppPrimaryButton(
-                          label: '분실물 등록',
-                          icon: Icons.add_rounded,
-                          onPressed: handler.openLostItemEditor,
-                          expanded: true,
+                  AppPrimaryButton(
+                    label: '분실물 등록',
+                    icon: Icons.add_rounded,
+                    onPressed: handler.openLostItemEditor,
+                    expanded: true,
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: handler.openDiscovery,
+                      icon: const Icon(Icons.manage_search_rounded, size: 18),
+                      label: const Text('분실·습득 탐색'),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: handler.openRewardEditor,
+                      icon: const Icon(Icons.card_giftcard_rounded, size: 18),
+                      label: const Text('사례금 등록'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryDark,
+                        minimumSize: const Size.fromHeight(44),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: AppSecondaryButton(
-                          label: '사례금 등록',
-                          icon: Icons.card_giftcard_rounded,
-                          onPressed: handler.openRewardEditor,
-                          expanded: true,
-                        ),
-                      ),
-                    ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '사례금은 분실물 등록 이후에 연결해도 됩니다.',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 28),
                   Row(
@@ -102,7 +120,10 @@ class MainPageBody extends StatelessWidget {
                       ),
                       IconButton(
                         onPressed: handler.refreshNearbyItems,
-                        icon: const Icon(Icons.refresh_rounded, color: AppColors.textTertiary),
+                        icon: const Icon(
+                          Icons.refresh_rounded,
+                          color: AppColors.textTertiary,
+                        ),
                       ),
                     ],
                   ),
@@ -151,13 +172,21 @@ class _Header extends StatelessWidget {
                   color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(22),
                 ),
-                child: const Icon(Icons.person_outline_rounded, color: AppColors.primary),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  color: AppColors.primary,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('환영합니다', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                  Text(
+                    '환영합니다',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   Text('$name 님', style: AppTextStyles.title),
                 ],
               ),
@@ -196,9 +225,7 @@ class _Header extends StatelessWidget {
 }
 
 class _SafeBanner extends StatelessWidget {
-  const _SafeBanner({
-    required this.safeZoneCount,
-  });
+  const _SafeBanner({required this.safeZoneCount});
 
   final int safeZoneCount;
 
@@ -220,7 +247,10 @@ class _SafeBanner extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(999),
@@ -250,7 +280,11 @@ class _SafeBanner extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.16),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.shield_outlined, color: Colors.white, size: 34),
+            child: const Icon(
+              Icons.shield_outlined,
+              color: Colors.white,
+              size: 34,
+            ),
           ),
         ],
       ),
@@ -263,11 +297,13 @@ class _LostAlertBanner extends StatelessWidget {
     required this.device,
     required this.onTrackTap,
     required this.onDismissTap,
+    required this.isCompact,
   });
 
   final BleDevice device;
   final VoidCallback onTrackTap;
   final VoidCallback onDismissTap;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -305,26 +341,43 @@ class _LostAlertBanner extends StatelessWidget {
             style: AppTextStyles.bodySecondary,
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: AppPrimaryButton(
-                  label: '위치 추적',
-                  icon: Icons.near_me_outlined,
-                  onPressed: onTrackTap,
-                  expanded: true,
+          isCompact
+              ? Column(
+                  children: [
+                    AppPrimaryButton(
+                      label: '위치 추적',
+                      icon: Icons.near_me_outlined,
+                      onPressed: onTrackTap,
+                      expanded: true,
+                    ),
+                    const SizedBox(height: 10),
+                    AppSecondaryButton(
+                      label: '오알림 처리',
+                      onPressed: onDismissTap,
+                      expanded: true,
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: AppPrimaryButton(
+                        label: '위치 추적',
+                        icon: Icons.near_me_outlined,
+                        onPressed: onTrackTap,
+                        expanded: true,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: AppSecondaryButton(
+                        label: '오알림 처리',
+                        onPressed: onDismissTap,
+                        expanded: true,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: AppSecondaryButton(
-                  label: '오알림 처리',
-                  onPressed: onDismissTap,
-                  expanded: true,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -347,10 +400,7 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Text(title, style: AppTextStyles.title)),
-        TextButton(
-          onPressed: onActionTap,
-          child: Text(actionLabel),
-        ),
+        TextButton(onPressed: onActionTap, child: Text(actionLabel)),
       ],
     );
   }

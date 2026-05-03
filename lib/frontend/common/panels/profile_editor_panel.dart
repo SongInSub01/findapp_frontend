@@ -5,6 +5,7 @@ import 'package:my_flutter_starter/data/models/app_models.dart';
 import 'package:my_flutter_starter/frontend/common/panels/app_panel_helpers.dart';
 import 'package:my_flutter_starter/frontend/common/panels/app_panel_scaffold.dart';
 import 'package:my_flutter_starter/frontend/common/resources/app_assets.dart';
+import 'package:my_flutter_starter/frontend/common/theme/app_colors.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_text_styles.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/app_buttons.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/app_text_field.dart';
@@ -18,18 +19,13 @@ Future<void> showProfileEditorPanel(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) => _ProfileEditorPanel(
-      controller: controller,
-      profile: profile,
-    ),
+    builder: (context) =>
+        _ProfileEditorPanel(controller: controller, profile: profile),
   );
 }
 
 class _ProfileEditorPanel extends StatefulWidget {
-  const _ProfileEditorPanel({
-    required this.controller,
-    required this.profile,
-  });
+  const _ProfileEditorPanel({required this.controller, required this.profile});
 
   final AppController controller;
   final UserProfile profile;
@@ -49,7 +45,9 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.profile.name);
-    _publicNameController = TextEditingController(text: widget.profile.publicName);
+    _publicNameController = TextEditingController(
+      text: widget.profile.publicName,
+    );
     _emailController = TextEditingController(text: widget.profile.email);
     _selectedPhotoAsset = widget.profile.photoAssetPath;
   }
@@ -73,7 +71,7 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
           Center(
             child: CircleAvatar(
               radius: 32,
-              backgroundColor: const Color(0xFFEFF6FF),
+              backgroundColor: AppColors.surfaceBlue,
               backgroundImage: AssetImage(_selectedPhotoAsset),
             ),
           ),
@@ -129,7 +127,9 @@ class _ProfileEditorPanelState extends State<_ProfileEditorPanel> {
                       }
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(error.toString().replaceFirst('Exception: ', '')),
+                          content: Text(
+                            error.toString().replaceFirst('Exception: ', ''),
+                          ),
                         ),
                       );
                     } finally {

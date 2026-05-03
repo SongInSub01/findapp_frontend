@@ -39,5 +39,12 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Xcode 26+ 환경에서 시뮬레이터 Pod framework에 Finder metadata가 섞이면
+    # CodeSign 단계가 실패할 수 있어, 시뮬레이터에서는 Pod 코드사인을 비활성화한다.
+    target.build_configurations.each do |config|
+      config.build_settings['CODE_SIGNING_ALLOWED[sdk=iphonesimulator*]'] = 'NO'
+      config.build_settings['CODE_SIGNING_REQUIRED[sdk=iphonesimulator*]'] = 'NO'
+    end
   end
 end

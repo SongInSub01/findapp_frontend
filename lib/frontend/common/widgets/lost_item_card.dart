@@ -3,17 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:my_flutter_starter/core/utils/formatters.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import 'app_buttons.dart';
 import 'secure_photo_thumbnail.dart';
 import 'status_badge.dart';
 
 class LostItemCard extends StatelessWidget {
-  const LostItemCard({
-    required this.item,
-    required this.onMessage,
-    super.key,
-  });
+  const LostItemCard({required this.item, required this.onMessage, super.key});
 
   final LostItem item;
   final VoidCallback onMessage;
@@ -21,11 +19,11 @@ class LostItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: AppSpacing.medium),
+      padding: const EdgeInsets.all(AppSpacing.large),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: AppColors.surfaceRaised,
+        borderRadius: BorderRadius.circular(AppRadii.extraLarge),
         boxShadow: const [
           BoxShadow(
             color: AppColors.shadow,
@@ -74,8 +72,11 @@ class LostItemCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.card_giftcard_rounded,
-                            size: 14, color: AppColors.primary),
+                        const Icon(
+                          Icons.card_giftcard_rounded,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '사례금 ${Formatters.money(item.reward)}',
@@ -94,14 +95,17 @@ class LostItemCard extends StatelessWidget {
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.medium,
+              vertical: 10,
+            ),
             decoration: BoxDecoration(
               color: item.photoStatus == PhotoAccessStatus.approved
-                  ? AppColors.greenBg
+                  ? AppColors.surfaceSuccess
                   : item.photoStatus == PhotoAccessStatus.pending
-                      ? AppColors.yellowBg
-                      : AppColors.borderLight,
-              borderRadius: BorderRadius.circular(12),
+                  ? AppColors.surfaceWarning
+                  : AppColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(AppRadii.xSmall),
             ),
             child: Row(
               children: [
@@ -109,14 +113,14 @@ class LostItemCard extends StatelessWidget {
                   item.photoStatus == PhotoAccessStatus.approved
                       ? Icons.verified_outlined
                       : item.photoStatus == PhotoAccessStatus.pending
-                          ? Icons.hourglass_top_rounded
-                          : Icons.lock_outline,
+                      ? Icons.hourglass_top_rounded
+                      : Icons.lock_outline,
                   size: 16,
                   color: item.photoStatus == PhotoAccessStatus.approved
                       ? AppColors.green
                       : item.photoStatus == PhotoAccessStatus.pending
-                          ? AppColors.yellow
-                          : AppColors.textSecondary,
+                      ? AppColors.yellow
+                      : AppColors.textSecondary,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -124,14 +128,14 @@ class LostItemCard extends StatelessWidget {
                     item.photoStatus == PhotoAccessStatus.approved
                         ? '승인 완료 상태: 주인 허가 후 사진 열람 가능'
                         : item.photoStatus == PhotoAccessStatus.pending
-                            ? '승인 대기 상태: 메시지 확인 후 사진 공개 여부가 결정됩니다'
-                            : '사진 잠금 상태: 먼저 주인에게 메시지를 보내야 합니다',
+                        ? '승인 대기 상태: 메시지 확인 후 사진 공개 여부가 결정됩니다'
+                        : '사진 잠금 상태: 먼저 주인에게 메시지를 보내야 합니다',
                     style: AppTextStyles.caption.copyWith(
                       color: item.photoStatus == PhotoAccessStatus.approved
                           ? AppColors.green
                           : item.photoStatus == PhotoAccessStatus.pending
-                              ? AppColors.yellow
-                              : AppColors.textSecondary,
+                          ? AppColors.yellow
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ),
@@ -152,10 +156,7 @@ class LostItemCard extends StatelessWidget {
 }
 
 class _MetaLine extends StatelessWidget {
-  const _MetaLine({
-    required this.icon,
-    required this.text,
-  });
+  const _MetaLine({required this.icon, required this.text});
 
   final IconData icon;
   final String text;

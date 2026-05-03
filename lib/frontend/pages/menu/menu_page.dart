@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import 'package:my_flutter_starter/app/state/app_controller.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
@@ -22,22 +23,20 @@ class MenuPage extends StatelessWidget {
 }
 
 class _SideMenuBody extends StatelessWidget {
-  const _SideMenuBody({
-    required this.controller,
-    required this.state,
-  });
+  const _SideMenuBody({required this.controller, required this.state});
 
   final AppController controller;
   final AppState state;
 
   @override
   Widget build(BuildContext context) {
+    final menuWidth = math.min(340.0, MediaQuery.sizeOf(context).width - 48);
     return Material(
       color: AppColors.overlay,
       child: Align(
         alignment: Alignment.centerLeft,
         child: Container(
-          width: 340,
+          width: menuWidth,
           height: double.infinity,
           color: AppColors.background,
           child: SafeArea(
@@ -48,7 +47,9 @@ class _SideMenuBody extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Expanded(child: Text('메뉴', style: AppTextStyles.title)),
+                      const Expanded(
+                        child: Text('메뉴', style: AppTextStyles.title),
+                      ),
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
                         icon: const Icon(Icons.close_rounded),
@@ -67,15 +68,23 @@ class _SideMenuBody extends StatelessWidget {
                         CircleAvatar(
                           radius: 26,
                           backgroundColor: const Color(0xFFEFF6FF),
-                          backgroundImage: AssetImage(state.userProfile.photoAssetPath),
+                          backgroundImage: AssetImage(
+                            state.userProfile.photoAssetPath,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(state.userProfile.name, style: AppTextStyles.subtitle),
-                              Text(state.userProfile.email, style: AppTextStyles.caption),
+                              Text(
+                                state.userProfile.name,
+                                style: AppTextStyles.subtitle,
+                              ),
+                              Text(
+                                state.userProfile.email,
+                                style: AppTextStyles.caption,
+                              ),
                             ],
                           ),
                         ),
@@ -87,7 +96,10 @@ class _SideMenuBody extends StatelessWidget {
                               profile: state.userProfile,
                             );
                           },
-                          icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+                          icon: const Icon(
+                            Icons.edit_outlined,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ],
                     ),
@@ -101,12 +113,19 @@ class _SideMenuBody extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        _StatCard(value: '${state.myDevices.length}', label: '등록 기기'),
-                        _verticalDivider(),
-                        _StatCard(value: '${state.chatThreads.length}', label: '채팅 중'),
+                        _StatCard(
+                          value: '${state.myDevices.length}',
+                          label: '등록 기기',
+                        ),
                         _verticalDivider(),
                         _StatCard(
-                          value: '${state.myDevices.where((d) => d.status == ItemStatus.lost).length}',
+                          value: '${state.chatThreads.length}',
+                          label: '채팅 중',
+                        ),
+                        _verticalDivider(),
+                        _StatCard(
+                          value:
+                              '${state.myDevices.where((d) => d.status == ItemStatus.lost).length}',
                           label: '분실 중',
                         ),
                       ],
@@ -143,6 +162,16 @@ class _SideMenuBody extends StatelessWidget {
                                 controller.switchTab(AppTab.setting);
                               },
                             ),
+                            _MenuTile(
+                              icon: Icons.manage_search_rounded,
+                              title: '분실·습득 탐색',
+                              onTap: () {
+                                Navigator.of(context).pop();
+                                Navigator.of(
+                                  context,
+                                ).pushNamed(AppRoutes.discovery);
+                              },
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -152,7 +181,9 @@ class _SideMenuBody extends StatelessWidget {
                             _MenuTile(
                               icon: Icons.notifications_outlined,
                               title: '알림 내역',
-                              badge: state.notifications.where((item) => !item.isRead).length,
+                              badge: state.notifications
+                                  .where((item) => !item.isRead)
+                                  .length,
                               onTap: () {
                                 showNotificationPanel(
                                   context,
@@ -210,7 +241,9 @@ class _SideMenuBody extends StatelessWidget {
                       foregroundColor: AppColors.red,
                       backgroundColor: AppColors.redBg,
                       minimumSize: const Size.fromHeight(52),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
                 ],
@@ -224,18 +257,11 @@ class _SideMenuBody extends StatelessWidget {
 }
 
 Widget _verticalDivider() {
-  return Container(
-    width: 1,
-    height: 36,
-    color: AppColors.borderLight,
-  );
+  return Container(width: 1, height: 36, color: AppColors.borderLight);
 }
 
 class _MenuGroup extends StatelessWidget {
-  const _MenuGroup({
-    required this.title,
-    required this.children,
-  });
+  const _MenuGroup({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -300,9 +326,15 @@ class _MenuTile extends StatelessWidget {
                   color: AppColors.red,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text('$badge', style: AppTextStyles.caption.copyWith(color: Colors.white)),
+                child: Text(
+                  '$badge',
+                  style: AppTextStyles.caption.copyWith(color: Colors.white),
+                ),
               ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.textTertiary),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppColors.textTertiary,
+            ),
           ],
         ),
       ),
@@ -311,10 +343,7 @@ class _MenuTile extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.value,
-    required this.label,
-  });
+  const _StatCard({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -324,7 +353,10 @@ class _StatCard extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(value, style: AppTextStyles.title.copyWith(color: AppColors.primary)),
+          Text(
+            value,
+            style: AppTextStyles.title.copyWith(color: AppColors.primary),
+          ),
           const SizedBox(height: 4),
           Text(label, style: AppTextStyles.caption),
         ],

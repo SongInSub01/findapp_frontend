@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
 import '../theme/app_text_styles.dart';
 
 class SettingTile extends StatelessWidget {
@@ -38,8 +39,8 @@ class SettingTile extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: danger ? AppColors.redBg : const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(12),
+                color: danger ? AppColors.surfaceDanger : AppColors.surfaceBlue,
+                borderRadius: BorderRadius.circular(AppRadii.xSmall),
               ),
               child: Icon(icon, color: iconColor, size: 20),
             ),
@@ -63,15 +64,15 @@ class SettingTile extends StatelessWidget {
               ),
             ),
             if (toggleValue != null)
-              Switch(
-                value: toggleValue!,
-                onChanged: onToggle,
-              )
+              Switch(value: toggleValue!, onChanged: onToggle)
             else ...[
               if (trailingText != null)
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
-                  child: Text(trailingText!, style: AppTextStyles.bodySecondary),
+                  child: Text(
+                    trailingText!,
+                    style: AppTextStyles.bodySecondary,
+                  ),
                 ),
               const Icon(
                 Icons.chevron_right_rounded,

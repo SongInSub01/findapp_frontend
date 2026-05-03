@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'pages/chat/chat_detail_page.dart';
+import 'pages/discovery/discovery_page.dart';
 import 'pages/join/join_page.dart';
 import 'pages/login/login_page.dart';
 import 'pages/menu/menu_page.dart';
@@ -15,6 +16,7 @@ abstract final class AppRoutes {
   static const shell = '/shell';
   static const sideMenu = '/menu';
   static const chatDetail = '/chat-detail';
+  static const discovery = '/discovery';
 }
 
 abstract final class AppRouteFactory {
@@ -33,14 +35,19 @@ abstract final class AppRouteFactory {
           settings: settings,
           opaque: false,
           barrierColor: Colors.black45,
-          pageBuilder: (context, animation, secondaryAnimation) => const MenuPage(),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const MenuPage(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final offsetAnimation = Tween<Offset>(
-              begin: const Offset(-0.15, 0),
-              end: Offset.zero,
-            ).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-            );
+            final offsetAnimation =
+                Tween<Offset>(
+                  begin: const Offset(-0.15, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeOutCubic,
+                  ),
+                );
             return SlideTransition(position: offsetAnimation, child: child);
           },
         );
@@ -49,12 +56,12 @@ abstract final class AppRouteFactory {
           settings: settings,
           child: ChatDetailPage(threadId: settings.arguments! as String),
         );
+      case AppRoutes.discovery:
+        return _page(settings: settings, child: const DiscoveryPage());
       default:
         return _page(
           settings: settings,
-          child: const Scaffold(
-            body: Center(child: Text('페이지를 찾을 수 없습니다.')),
-          ),
+          child: const Scaffold(body: Center(child: Text('페이지를 찾을 수 없습니다.'))),
         );
     }
   }
@@ -63,9 +70,6 @@ abstract final class AppRouteFactory {
     required RouteSettings settings,
     required Widget child,
   }) {
-    return MaterialPageRoute<void>(
-      settings: settings,
-      builder: (_) => child,
-    );
+    return MaterialPageRoute<void>(settings: settings, builder: (_) => child);
   }
 }

@@ -22,9 +22,7 @@ Future<void> showLostItemEditorPanel(
 }
 
 class _LostItemEditorPanel extends StatefulWidget {
-  const _LostItemEditorPanel({
-    required this.controller,
-  });
+  const _LostItemEditorPanel({required this.controller});
 
   final AppController controller;
 
@@ -35,9 +33,12 @@ class _LostItemEditorPanel extends StatefulWidget {
 class _LostItemEditorPanelState extends State<_LostItemEditorPanel> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
-  final TextEditingController _rewardController = TextEditingController(text: '30000');
+  final TextEditingController _rewardController = TextEditingController(
+    text: '30000',
+  );
   final TextEditingController _descriptionController = TextEditingController();
   String _selectedPhotoAsset = AppAssets.splashIcon;
+  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -93,31 +94,65 @@ class _LostItemEditorPanelState extends State<_LostItemEditorPanel> {
             ),
             child: Text(
               '사진은 기본 잠금 상태로 등록되며, 주인 승인 후에만 열람할 수 있습니다.',
-              style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.caption.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           const SizedBox(height: 18),
           AppPrimaryButton(
-            label: '등록',
+            label: _isSaving ? '등록 중...' : '등록',
             expanded: true,
-            onPressed: () {
-              final title = _titleController.text.trim();
-              final location = _locationController.text.trim();
-              final reward = int.tryParse(_rewardController.text.replaceAll(',', '')) ?? 30000;
-              if (title.isEmpty || location.isEmpty) {
-                return;
-              }
-              widget.controller.saveLostItem(
-                title: title,
-                location: location,
-                reward: reward,
-                description: _descriptionController.text.trim().isEmpty
-                    ? 'BLE 감지 후 등록된 분실물입니다.'
-                    : _descriptionController.text.trim(),
-                photoAssetPath: _selectedPhotoAsset,
-              );
-              Navigator.of(context).pop();
-            },
+            onPressed: _isSaving
+                ? null
+                : () async {
+                    final title = _titleController.text.trim();
+                    final location = _locationController.text.trim();
+                    final reward =
+                        int.tryParse(
+                          _rewardController.text.replaceAll(',', ''),
+                        ) ??
+                        30000;
+                    if (title.isEmpty || location.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('분실물 이름과 분실 장소를 입력해 주세요.'),
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() => _isSaving = true);
+                    try {
+                      await widget.controller.saveLostItem(
+                        title: title,
+                        location: location,
+                        reward: reward,
+                        description: _descriptionController.text.trim().isEmpty
+                            ? 'BLE 감지 후 등록된 분실물입니다.'
+                            : _descriptionController.text.trim(),
+                        photoAssetPath: _selectedPhotoAsset,
+                      );
+                      if (!context.mounted) {
+                        return;
+                      }
+                      Navigator.of(context).pop();
+                    } catch (error) {
+                      if (!context.mounted) {
+                        return;
+                      }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            error.toString().replaceFirst('Exception: ', ''),
+                          ),
+                        ),
+                      );
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isSaving = false);
+                      }
+                    }
+                  },
           ),
         ],
       ),

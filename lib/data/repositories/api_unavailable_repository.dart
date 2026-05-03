@@ -13,10 +13,7 @@ class ApiUnavailableRepository implements AppRepository {
   Future<AppState?> loadLatestState({String? loginId}) async => null;
 
   @override
-  Future<AuthUser> login({
-    required String loginId,
-    required String password,
-  }) {
+  Future<AuthUser> login({required String loginId, required String password}) {
     throw Exception('APP_API_BASE_URL이 설정되지 않아 로그인할 수 없습니다.');
   }
 
@@ -42,6 +39,16 @@ class ApiUnavailableRepository implements AppRepository {
   }
 
   @override
+  Future<CurrentLocation> upsertCurrentLocation({
+    required String loginId,
+    required double latitude,
+    required double longitude,
+    double? accuracyMeters,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 현재 위치를 저장할 수 없습니다.');
+  }
+
+  @override
   Future<void> updateAlertSettings({
     required String loginId,
     required AlertSettings settings,
@@ -50,11 +57,66 @@ class ApiUnavailableRepository implements AppRepository {
   }
 
   @override
-  Future<void> saveSafeZone({
-    required String loginId,
-    required SafeZone zone,
-  }) {
+  Future<void> saveSafeZone({required String loginId, required SafeZone zone}) {
     throw Exception('APP_API_BASE_URL이 설정되지 않아 안전지대를 저장할 수 없습니다.');
+  }
+
+  @override
+  Future<void> saveBleDevice({
+    required String loginId,
+    required BleDevice device,
+    required bool isNew,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 BLE 기기를 저장할 수 없습니다.');
+  }
+
+  @override
+  Future<void> createLostItem({
+    required String loginId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
+    String? photoAssetPath,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 분실물을 저장할 수 없습니다.');
+  }
+
+  @override
+  Future<void> createFoundItem({
+    required String loginId,
+    required String title,
+    required String location,
+    required String description,
+    String? photoAssetPath,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 습득물을 저장할 수 없습니다.');
+  }
+
+  @override
+  Future<List<ListingSummary>> searchListings({
+    required String loginId,
+    required String query,
+    ListingType? itemType,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 검색할 수 없습니다.');
+  }
+
+  @override
+  Future<List<MatchRecord>> loadMatches({required String loginId}) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 매칭을 불러올 수 없습니다.');
+  }
+
+  @override
+  Future<void> submitInquiry({
+    required String loginId,
+    required InquiryCategory category,
+    required String title,
+    required String body,
+    ListingType? relatedItemType,
+    String? relatedItemId,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 문의를 저장할 수 없습니다.');
   }
 
   @override
@@ -64,6 +126,14 @@ class ApiUnavailableRepository implements AppRepository {
     required int reward,
   }) {
     throw Exception('APP_API_BASE_URL이 설정되지 않아 사례금을 저장할 수 없습니다.');
+  }
+
+  @override
+  Future<void> refreshBleSignal({
+    required String loginId,
+    required String deviceId,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 BLE 신호를 갱신할 수 없습니다.');
   }
 
   @override

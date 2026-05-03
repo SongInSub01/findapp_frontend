@@ -21,11 +21,7 @@ class MainPageHandler {
   }
 
   void openNotifications() {
-    showNotificationPanel(
-      context,
-      controller: controller,
-      state: state,
-    );
+    showNotificationPanel(context, controller: controller, state: state);
   }
 
   void trackDevice(String deviceId) {
@@ -46,10 +42,7 @@ class MainPageHandler {
   }
 
   void openLostItemEditor() {
-    showLostItemEditorPanel(
-      context,
-      controller: controller,
-    );
+    showLostItemEditorPanel(context, controller: controller);
   }
 
   void openRewardEditor({String? itemId}) {
@@ -61,11 +54,15 @@ class MainPageHandler {
     );
   }
 
+  void openDiscovery() {
+    Navigator.of(context).pushNamed(AppRoutes.discovery);
+  }
+
   void refreshNearbyItems() {
     controller.refreshNearbyItems();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('주변 BLE 탐색 목록을 갱신했습니다.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('주변 BLE 탐색 목록을 갱신했습니다.')));
   }
 
   Future<void> openChatForLostItem(LostItem item) async {
@@ -74,16 +71,17 @@ class MainPageHandler {
       if (!context.mounted) {
         return;
       }
-      Navigator.of(context).pushNamed(
-        AppRoutes.chatDetail,
-        arguments: threadId,
-      );
+      Navigator.of(
+        context,
+      ).pushNamed(AppRoutes.chatDetail, arguments: threadId);
     } catch (error) {
       if (!context.mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     }
   }

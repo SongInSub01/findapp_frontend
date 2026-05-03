@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_radii.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 class AppPrimaryButton extends StatelessWidget {
@@ -19,25 +21,18 @@ class AppPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = FilledButton.styleFrom(
-      backgroundColor: AppColors.primary,
-      foregroundColor: Colors.white,
-      disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      minimumSize: const Size.fromHeight(52),
-    );
+    final style = _baseFilledStyle();
+    final labelStyle = AppTextStyles.body.copyWith(color: Colors.white);
     final child = icon == null
         ? FilledButton(
             onPressed: onPressed,
             style: style,
-            child: Text(label, style: AppTextStyles.body.copyWith(color: Colors.white)),
+            child: Text(label, style: labelStyle),
           )
         : FilledButton.icon(
             onPressed: onPressed,
             icon: Icon(icon, size: 18),
-            label: Text(label, style: AppTextStyles.body.copyWith(color: Colors.white)),
+            label: Text(label, style: labelStyle),
             style: style,
           );
     return expanded ? SizedBox(width: double.infinity, child: child) : child;
@@ -60,15 +55,7 @@ class AppSecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = OutlinedButton.styleFrom(
-      foregroundColor: AppColors.text,
-      backgroundColor: Colors.white,
-      side: const BorderSide(color: AppColors.border),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      minimumSize: const Size.fromHeight(52),
-    );
+    final style = _baseOutlinedStyle();
     final child = icon == null
         ? OutlinedButton(
             onPressed: onPressed,
@@ -83,4 +70,30 @@ class AppSecondaryButton extends StatelessWidget {
           );
     return expanded ? SizedBox(width: double.infinity, child: child) : child;
   }
+}
+
+ButtonStyle _baseFilledStyle() {
+  return FilledButton.styleFrom(
+    backgroundColor: AppColors.primary,
+    foregroundColor: Colors.white,
+    disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.4),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadii.medium),
+    ),
+    minimumSize: const Size.fromHeight(52),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xLarge),
+  );
+}
+
+ButtonStyle _baseOutlinedStyle() {
+  return OutlinedButton.styleFrom(
+    foregroundColor: AppColors.text,
+    backgroundColor: AppColors.surfaceRaised,
+    side: const BorderSide(color: AppColors.border),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadii.medium),
+    ),
+    minimumSize: const Size.fromHeight(52),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xLarge),
+  );
 }

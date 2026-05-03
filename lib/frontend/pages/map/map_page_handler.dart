@@ -4,6 +4,7 @@ import 'package:my_flutter_starter/app/state/app_controller.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
 import 'package:my_flutter_starter/frontend/app_routes.dart';
 
+import 'map_kakao_bridge.dart';
 import 'map_view_models.dart';
 
 class MapPageHandler {
@@ -11,32 +12,30 @@ class MapPageHandler {
     required this.context,
     required this.controller,
     required this.state,
-    required this.selectedTargetId,
+    required this.currentLocation,
     required this.layerMode,
     required this.onLayerModeChanged,
-    required this.onSelectedTargetChanged,
+    required this.onMapControllerChanged,
   });
 
   final BuildContext context;
   final AppController controller;
   final AppState state;
-  final String? selectedTargetId;
+  final CurrentLocation? currentLocation;
   final MapLayerMode layerMode;
   final ValueChanged<MapLayerMode> onLayerModeChanged;
-  final ValueChanged<String?> onSelectedTargetChanged;
+  final ValueChanged<KakaoMapController> onMapControllerChanged;
+
+  KakaoMapController? mapController;
+
+  void attachMapController(KakaoMapController controller) {
+    mapController = controller;
+    onMapControllerChanged(controller);
+    focusCurrentLocation();
+  }
 
   void openMenu() {
     Navigator.of(context).pushNamed(AppRoutes.sideMenu);
-  }
-
-  void selectMarker(String? targetId) {
-    onSelectedTargetChanged(
-      selectedTargetId == targetId ? null : targetId,
-    );
-  }
-
-  void closeDetail() {
-    onSelectedTargetChanged(null);
   }
 
   void cycleLayerMode() {
@@ -48,24 +47,17 @@ class MapPageHandler {
       MapLayerMode.safeZone => '안전지대 레이어',
       MapLayerMode.tracking => 'BLE 추적 레이어',
     };
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$label로 전환했습니다.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('$label로 전환했습니다.')));
   }
 
-  void focusPriorityTarget() {
-    final lostMine = state.myDevices.where((device) => device.status == ItemStatus.lost);
-    if (lostMine.isNotEmpty) {
-      onSelectedTargetChanged(lostMine.first.id);
+  void focusCurrentLocation() {
+    final location = currentLocation;
+    if (location == null) {
       return;
     }
-    if (state.lostItems.isNotEmpty) {
-      onSelectedTargetChanged(state.lostItems.first.id);
-      return;
-    }
-    if (state.myDevices.isNotEmpty) {
-      onSelectedTargetChanged(state.myDevices.first.id);
-    }
+    mapController?.setCenter(LatLng(location.latitude, location.longitude));
   }
 
   Future<void> handleMarkerAction(MapMarkerViewData marker) async {
@@ -78,13 +70,17 @@ class MapPageHandler {
       if (!context.mounted) {
         return;
       }
-      Navigator.of(context).pushNamed(AppRoutes.chatDetail, arguments: threadId);
+      Navigator.of(
+        context,
+      ).pushNamed(AppRoutes.chatDetail, arguments: threadId);
     } catch (error) {
       if (!context.mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     }
   }

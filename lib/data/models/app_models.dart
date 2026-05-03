@@ -3,6 +3,8 @@ enum AppTab { main, map, chat, setting }
 
 enum ItemStatus { safe, lost, contact }
 
+enum BleSignalStatus { near, far, risk, disconnected, lost, rediscovered }
+
 enum PhotoAccessStatus { locked, pending, approved }
 
 enum ChatSender { me, other, system }
@@ -10,6 +12,18 @@ enum ChatSender { me, other, system }
 enum ChatMessageType { text, photoRequest, photoApproved, report }
 
 enum NotificationType { alert, approval, info, report }
+
+enum MapThemeMode { dark, light }
+
+enum ListingType { lost, found }
+
+enum ListingWorkflowStatus { open, matched, resolved, archived }
+
+enum MatchStatus { suggested, reviewing, confirmed, dismissed }
+
+enum InquiryCategory { report, support, moderation }
+
+enum InquiryStatus { open, reviewing, resolved, closed }
 
 class UserProfile {
   const UserProfile({
@@ -72,11 +86,19 @@ class BleDevice {
     required this.location,
     required this.lastSeen,
     required this.bleCode,
+    required this.lastSignalAt,
+    this.bleStatus = BleSignalStatus.near,
     required this.mapX,
     required this.mapY,
     this.distance,
     this.reward,
     this.photoAssetPath,
+    this.lastRssi,
+    this.lastDetectedLatitude,
+    this.lastDetectedLongitude,
+    this.lastDetectedAccuracyMeters,
+    this.focusedScanUntil,
+    this.rediscoveredAt,
   });
 
   final String id;
@@ -86,11 +108,19 @@ class BleDevice {
   final String location;
   final String lastSeen;
   final String bleCode;
+  final String lastSignalAt;
+  final BleSignalStatus bleStatus;
   final double mapX;
   final double mapY;
   final String? distance;
   final int? reward;
   final String? photoAssetPath;
+  final int? lastRssi;
+  final double? lastDetectedLatitude;
+  final double? lastDetectedLongitude;
+  final double? lastDetectedAccuracyMeters;
+  final String? focusedScanUntil;
+  final String? rediscoveredAt;
 
   BleDevice copyWith({
     String? id,
@@ -100,11 +130,19 @@ class BleDevice {
     String? location,
     String? lastSeen,
     String? bleCode,
+    String? lastSignalAt,
+    BleSignalStatus? bleStatus,
     double? mapX,
     double? mapY,
     String? distance,
     int? reward,
     String? photoAssetPath,
+    int? lastRssi,
+    double? lastDetectedLatitude,
+    double? lastDetectedLongitude,
+    double? lastDetectedAccuracyMeters,
+    String? focusedScanUntil,
+    String? rediscoveredAt,
   }) {
     return BleDevice(
       id: id ?? this.id,
@@ -114,11 +152,21 @@ class BleDevice {
       location: location ?? this.location,
       lastSeen: lastSeen ?? this.lastSeen,
       bleCode: bleCode ?? this.bleCode,
+      lastSignalAt: lastSignalAt ?? this.lastSignalAt,
+      bleStatus: bleStatus ?? this.bleStatus,
       mapX: mapX ?? this.mapX,
       mapY: mapY ?? this.mapY,
       distance: distance ?? this.distance,
       reward: reward ?? this.reward,
       photoAssetPath: photoAssetPath ?? this.photoAssetPath,
+      lastRssi: lastRssi ?? this.lastRssi,
+      lastDetectedLatitude: lastDetectedLatitude ?? this.lastDetectedLatitude,
+      lastDetectedLongitude:
+          lastDetectedLongitude ?? this.lastDetectedLongitude,
+      lastDetectedAccuracyMeters:
+          lastDetectedAccuracyMeters ?? this.lastDetectedAccuracyMeters,
+      focusedScanUntil: focusedScanUntil ?? this.focusedScanUntil,
+      rediscoveredAt: rediscoveredAt ?? this.rediscoveredAt,
     );
   }
 }
@@ -135,6 +183,7 @@ class LostItem {
     required this.distance,
     required this.ownerName,
     required this.description,
+    required this.sourceDeviceId,
     required this.mapX,
     required this.mapY,
     this.threadId,
@@ -151,6 +200,7 @@ class LostItem {
   final String distance;
   final String ownerName;
   final String description;
+  final String? sourceDeviceId;
   final double mapX;
   final double mapY;
   final String? threadId;
@@ -167,6 +217,7 @@ class LostItem {
     String? distance,
     String? ownerName,
     String? description,
+    String? sourceDeviceId,
     double? mapX,
     double? mapY,
     String? threadId,
@@ -183,6 +234,7 @@ class LostItem {
       distance: distance ?? this.distance,
       ownerName: ownerName ?? this.ownerName,
       description: description ?? this.description,
+      sourceDeviceId: sourceDeviceId ?? this.sourceDeviceId,
       mapX: mapX ?? this.mapX,
       mapY: mapY ?? this.mapY,
       threadId: threadId ?? this.threadId,
@@ -299,7 +351,9 @@ class AlertSettings {
     required this.soundEnabled,
     required this.autoApprovePhotos,
     required this.keepPhotoPrivateByDefault,
-  });
+    required this.defaultReward,
+    MapThemeMode? mapTheme,
+  }) : mapTheme = mapTheme ?? MapThemeMode.light;
 
   final int distanceMeters;
   final int disconnectMinutes;
@@ -307,6 +361,8 @@ class AlertSettings {
   final bool soundEnabled;
   final bool autoApprovePhotos;
   final bool keepPhotoPrivateByDefault;
+  final int defaultReward;
+  final MapThemeMode mapTheme;
 
   AlertSettings copyWith({
     int? distanceMeters,
@@ -315,6 +371,8 @@ class AlertSettings {
     bool? soundEnabled,
     bool? autoApprovePhotos,
     bool? keepPhotoPrivateByDefault,
+    int? defaultReward,
+    MapThemeMode? mapTheme,
   }) {
     return AlertSettings(
       distanceMeters: distanceMeters ?? this.distanceMeters,
@@ -324,6 +382,36 @@ class AlertSettings {
       autoApprovePhotos: autoApprovePhotos ?? this.autoApprovePhotos,
       keepPhotoPrivateByDefault:
           keepPhotoPrivateByDefault ?? this.keepPhotoPrivateByDefault,
+      defaultReward: defaultReward ?? this.defaultReward,
+      mapTheme: mapTheme ?? this.mapTheme,
+    );
+  }
+}
+
+class CurrentLocation {
+  const CurrentLocation({
+    required this.latitude,
+    required this.longitude,
+    required this.updatedAt,
+    this.accuracyMeters,
+  });
+
+  final double latitude;
+  final double longitude;
+  final double? accuracyMeters;
+  final String updatedAt;
+
+  CurrentLocation copyWith({
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
+    String? updatedAt,
+  }) {
+    return CurrentLocation(
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      accuracyMeters: accuracyMeters ?? this.accuracyMeters,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
@@ -380,10 +468,116 @@ class ReportRecord {
   final String statusLabel;
 }
 
+class ListingSummary {
+  const ListingSummary({
+    required this.id,
+    required this.itemType,
+    required this.title,
+    required this.category,
+    required this.color,
+    required this.location,
+    required this.happenedAt,
+    required this.happenedAtLabel,
+    required this.listingStatus,
+    required this.description,
+    required this.featureNotes,
+    required this.contactNote,
+    required this.ownerDisplayName,
+    required this.matchCount,
+    required this.isMine,
+    this.imageUrl,
+    this.reward,
+  });
+
+  final String id;
+  final ListingType itemType;
+  final String title;
+  final String category;
+  final String color;
+  final String location;
+  final String happenedAt;
+  final String happenedAtLabel;
+  final ListingWorkflowStatus listingStatus;
+  final String description;
+  final String featureNotes;
+  final String contactNote;
+  final String ownerDisplayName;
+  final String? imageUrl;
+  final int? reward;
+  final int matchCount;
+  final bool isMine;
+}
+
+class MatchRecord {
+  const MatchRecord({
+    required this.id,
+    required this.score,
+    required this.matchStatus,
+    required this.reasonSummary,
+    required this.lostItem,
+    required this.foundItem,
+  });
+
+  final String id;
+  final double score;
+  final MatchStatus matchStatus;
+  final String reasonSummary;
+  final ListingSummary lostItem;
+  final ListingSummary foundItem;
+}
+
+class InquiryRecord {
+  const InquiryRecord({
+    required this.id,
+    required this.category,
+    required this.title,
+    required this.body,
+    required this.status,
+    required this.createdAt,
+    required this.createdAtLabel,
+    this.relatedItemType,
+    this.relatedItemId,
+  });
+
+  final String id;
+  final InquiryCategory category;
+  final String title;
+  final String body;
+  final InquiryStatus status;
+  final ListingType? relatedItemType;
+  final String? relatedItemId;
+  final String createdAt;
+  final String createdAtLabel;
+}
+
+class DashboardSummary {
+  const DashboardSummary({
+    required this.openLostCount,
+    required this.openFoundCount,
+    required this.matchedCount,
+    required this.unreadNotificationCount,
+  });
+
+  final int openLostCount;
+  final int openFoundCount;
+  final int matchedCount;
+  final int unreadNotificationCount;
+
+  factory DashboardSummary.empty() {
+    return const DashboardSummary(
+      openLostCount: 0,
+      openFoundCount: 0,
+      matchedCount: 0,
+      unreadNotificationCount: 0,
+    );
+  }
+}
+
 class AppState {
   const AppState({
     required this.currentTab,
     required this.selectedMapTargetId,
+    required this.currentLocation,
     required this.userProfile,
     required this.myDevices,
     required this.lostItems,
@@ -392,10 +586,21 @@ class AppState {
     required this.alertSettings,
     required this.notifications,
     required this.reports,
+    required this.dashboardSummary,
+    required this.myLostListings,
+    required this.myFoundListings,
+    required this.recentLostListings,
+    required this.recentFoundListings,
+    required this.suggestedMatches,
+    required this.inquiries,
+    required this.availableCategories,
+    required this.availableColors,
+    required this.searchResults,
   });
 
   final AppTab currentTab;
   final String? selectedMapTargetId;
+  final CurrentLocation? currentLocation;
   final UserProfile userProfile;
   final List<BleDevice> myDevices;
   final List<LostItem> lostItems;
@@ -404,11 +609,22 @@ class AppState {
   final AlertSettings alertSettings;
   final List<NotificationItem> notifications;
   final List<ReportRecord> reports;
+  final DashboardSummary dashboardSummary;
+  final List<ListingSummary> myLostListings;
+  final List<ListingSummary> myFoundListings;
+  final List<ListingSummary> recentLostListings;
+  final List<ListingSummary> recentFoundListings;
+  final List<MatchRecord> suggestedMatches;
+  final List<InquiryRecord> inquiries;
+  final List<String> availableCategories;
+  final List<String> availableColors;
+  final List<ListingSummary> searchResults;
 
   factory AppState.empty() {
     return AppState(
       currentTab: AppTab.main,
       selectedMapTargetId: null,
+      currentLocation: null,
       userProfile: UserProfile.empty(),
       myDevices: const [],
       lostItems: const [],
@@ -421,9 +637,21 @@ class AppState {
         soundEnabled: true,
         autoApprovePhotos: false,
         keepPhotoPrivateByDefault: true,
+        defaultReward: 30000,
+        mapTheme: MapThemeMode.light,
       ),
       notifications: const [],
       reports: const [],
+      dashboardSummary: DashboardSummary.empty(),
+      myLostListings: const [],
+      myFoundListings: const [],
+      recentLostListings: const [],
+      recentFoundListings: const [],
+      suggestedMatches: const [],
+      inquiries: const [],
+      availableCategories: const [],
+      availableColors: const [],
+      searchResults: const [],
     );
   }
 
@@ -431,6 +659,8 @@ class AppState {
     AppTab? currentTab,
     String? selectedMapTargetId,
     bool clearSelectedMapTarget = false,
+    CurrentLocation? currentLocation,
+    bool clearCurrentLocation = false,
     UserProfile? userProfile,
     List<BleDevice>? myDevices,
     List<LostItem>? lostItems,
@@ -439,12 +669,25 @@ class AppState {
     AlertSettings? alertSettings,
     List<NotificationItem>? notifications,
     List<ReportRecord>? reports,
+    DashboardSummary? dashboardSummary,
+    List<ListingSummary>? myLostListings,
+    List<ListingSummary>? myFoundListings,
+    List<ListingSummary>? recentLostListings,
+    List<ListingSummary>? recentFoundListings,
+    List<MatchRecord>? suggestedMatches,
+    List<InquiryRecord>? inquiries,
+    List<String>? availableCategories,
+    List<String>? availableColors,
+    List<ListingSummary>? searchResults,
   }) {
     return AppState(
       currentTab: currentTab ?? this.currentTab,
       selectedMapTargetId: clearSelectedMapTarget
           ? null
           : selectedMapTargetId ?? this.selectedMapTargetId,
+      currentLocation: clearCurrentLocation
+          ? null
+          : currentLocation ?? this.currentLocation,
       userProfile: userProfile ?? this.userProfile,
       myDevices: myDevices ?? this.myDevices,
       lostItems: lostItems ?? this.lostItems,
@@ -453,6 +696,16 @@ class AppState {
       alertSettings: alertSettings ?? this.alertSettings,
       notifications: notifications ?? this.notifications,
       reports: reports ?? this.reports,
+      dashboardSummary: dashboardSummary ?? this.dashboardSummary,
+      myLostListings: myLostListings ?? this.myLostListings,
+      myFoundListings: myFoundListings ?? this.myFoundListings,
+      recentLostListings: recentLostListings ?? this.recentLostListings,
+      recentFoundListings: recentFoundListings ?? this.recentFoundListings,
+      suggestedMatches: suggestedMatches ?? this.suggestedMatches,
+      inquiries: inquiries ?? this.inquiries,
+      availableCategories: availableCategories ?? this.availableCategories,
+      availableColors: availableColors ?? this.availableColors,
+      searchResults: searchResults ?? this.searchResults,
     );
   }
 }
