@@ -68,9 +68,14 @@ class _SideMenuBody extends StatelessWidget {
                         CircleAvatar(
                           radius: 26,
                           backgroundColor: const Color(0xFFEFF6FF),
-                          backgroundImage: AssetImage(
-                            state.userProfile.photoAssetPath,
-                          ),
+                          // 경로가 비어있지 않을 때만 AssetImage를 적용합니다.
+                          backgroundImage: state.userProfile.photoAssetPath.isNotEmpty
+                              ? AssetImage(state.userProfile.photoAssetPath)
+                              : null,
+                          // 경로가 비어있으면 기본 사람 아이콘을 표시합니다.
+                          child: state.userProfile.photoAssetPath.isEmpty
+                              ? const Icon(Icons.person, color: AppColors.primary)
+                              : null,
                         ),
                         const SizedBox(width: 12),
                         Expanded(

@@ -6,6 +6,8 @@ import 'core/config/kakao_map_config.dart';
 import 'frontend/find_app.dart';
 import 'frontend/frontend_scope.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -13,6 +15,11 @@ Future<void> main() async {
   if (KakaoMapConfig.hasJavaScriptKey) {
     AuthRepository.initialize(appKey: KakaoMapConfig.javascriptKey);
   }
+
+  await dotenv.load(fileName: ".env");
+
+  // ignore: avoid_print
+  print(dotenv.env['API_BASE_URL']);
 
   // 기존 앱 로직 실행
   final controller = await AppController.create();
