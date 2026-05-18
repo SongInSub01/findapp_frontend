@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+
 import 'package:my_flutter_starter/frontend/common/theme/app_colors.dart';
 import 'package:my_flutter_starter/frontend/frontend_scope.dart';
 
-import 'package:my_flutter_starter/frontend/pages/reward/reward_shop_page.dart';
 import 'package:my_flutter_starter/frontend/pages/reward/reward_benefit_page.dart';
+import 'package:my_flutter_starter/frontend/pages/reward/reward_shop_page.dart';
 import 'package:my_flutter_starter/frontend/pages/reward/reward_success_dialog.dart';
+
+import 'package:my_flutter_starter/frontend/pages/reward/reward_model.dart';
+import 'package:my_flutter_starter/frontend/pages/reward/reward_api.dart';
 
 class RewardPage extends StatefulWidget {
   const RewardPage({super.key});
@@ -17,96 +21,132 @@ class RewardPage extends StatefulWidget {
 class _RewardPageState
     extends State<RewardPage> {
 
-  /// 현재 포인트
-  int currentPoints = 2500;
+  RewardStatus? rewardStatus;
 
-  /// 진행도
-  final double progress = 0.7;
-
-  /// 퀘스트
-  late List<Map<String, dynamic>> quests;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
 
-    quests = [
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) {
 
-      {
-        'title': '주변 분실물 3개 확인하기',
-        'rewardMoney': 5000,
-        'completed': false,
-        'icon': Icons.search,
-        'progress': '3 / 5',
-      },
+      loadReward();
+    });
+  }
 
-      {
-        'title': '습득물 등록하기',
-        'rewardMoney': 3000,
-        'completed': false,
-        'icon': Icons.camera_alt,
-        'progress': '1 / 3',
-      },
+  Future<void> loadReward() async {
 
-      {
-        'title': '채팅 응답하기',
-        'rewardMoney': 10000,
-        'completed': true,
-        'icon': Icons.chat,
-        'progress': '완료',
-      },
-    ];
+    try {
+
+      final state =
+          AppScope.controllerOf(context)
+              .state;
+
+      final email =
+          state.userProfile.email;
+
+      print('현재 이메일: $email');
+
+      final json =
+          await RewardApi.getRewardStatus(
+        email: email,
+      );
+
+      print('리워드 응답: $json');
+
+      setState(() {
+
+        rewardStatus =
+            RewardStatus.fromJson(json);
+
+        isLoading = false;
+      });
+
+    } catch (e, stackTrace) {
+
+      print('리워드 에러 발생');
+      print(e);
+      print(stackTrace);
+
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  IconData getQuestIcon(
+    String iconKey,
+  ) {
+
+    switch (iconKey) {
+
+      case 'search':
+        return Icons.search;
+
+      case 'camera':
+        return Icons.camera_alt;
+
+      case 'chat':
+        return Icons.chat;
+
+      default:
+        return Icons.card_giftcard;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
 
-    /// 사용자 정보
     final state =
         AppScope.controllerOf(context)
             .state;
 
-    final userProfile =
-        state.userProfile;
-
     final userName =
-        userProfile.name.isNotEmpty
-            ? userProfile.name
-            : '사용자';
+        state.userProfile.name;
+
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(
+          child:
+              CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (rewardStatus == null) {
+      return const Scaffold(
+        body: Center(
+          child: Text(
+            '리워드를 불러오지 못했습니다.',
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor:
           const Color(0xFFF5F7FB),
 
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-
-        title: const Text(
-          '리워드',
-
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight:
-                FontWeight.bold,
-          ),
-        ),
+        title: const Text('리워드'),
       ),
 
       body: SingleChildScrollView(
         child: Column(
           children: [
 
-            /// =========================
-            /// 상단 카드
-            /// =========================
-
             Container(
               margin:
-                  const EdgeInsets.all(20),
+                  const EdgeInsets.all(
+                20,
+              ),
 
               padding:
-                  const EdgeInsets.all(24),
+                  const EdgeInsets.all(
+                24,
+              ),
 
               decoration: BoxDecoration(
                 borderRadius:
@@ -120,25 +160,7 @@ class _RewardPageState
                     Color(0xFF1E293B),
                     Color(0xFF0F172A),
                   ],
-
-                  begin:
-                      Alignment.topLeft,
-
-                  end:
-                      Alignment.bottomRight,
                 ),
-
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black
-                        .withOpacity(0.12),
-
-                    blurRadius: 14,
-
-                    offset:
-                        const Offset(0, 8),
-                  ),
-                ],
               ),
 
               child: Column(
@@ -148,50 +170,20 @@ class _RewardPageState
 
                 children: [
 
-                  /// 사용자
-                  Row(
-                    children: [
+                  Text(
+                    '$userName님',
 
-                      const CircleAvatar(
-                        radius: 30,
-
-                        backgroundColor:
-                            Colors.white24,
-
-                        child: Icon(
-                          Icons.person,
-                          color:
-                              Colors.white,
-                          size: 30,
-                        ),
-                      ),
-
-                      const SizedBox(
-                        width: 16,
-                      ),
-
-                      Expanded(
-                        child: Text(
-                          '$userName님',
-
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.white,
-
-                            fontWeight:
-                                FontWeight
-                                    .bold,
-
-                            fontSize: 24,
-                          ),
-                        ),
-                      ),
-                    ],
+                    style:
+                        const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
                   ),
 
                   const SizedBox(
-                    height: 30,
+                    height: 24,
                   ),
 
                   const Text(
@@ -199,7 +191,7 @@ class _RewardPageState
 
                     style: TextStyle(
                       color:
-                          Colors.white60,
+                          Colors.white70,
                     ),
                   ),
 
@@ -208,134 +200,42 @@ class _RewardPageState
                   ),
 
                   Text(
-                    '$currentPoints P',
+                    '${rewardStatus!.currentPoints} P',
 
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       color: Colors.amber,
-
+                      fontSize: 40,
                       fontWeight:
                           FontWeight.bold,
-
-                      fontSize: 40,
                     ),
                   ),
 
                   const SizedBox(
-                    height: 24,
+                    height: 20,
                   ),
 
-                  const Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment
-                            .spaceBetween,
-
-                    children: [
-
-                      Text(
-                        '다음 보상까지',
-
-                        style: TextStyle(
-                          color:
-                              Colors.white70,
-                        ),
-                      ),
-
-                      Text(
-                        '2500 / 3500 P',
-
-                        style: TextStyle(
-                          color:
-                              Colors.white70,
-                        ),
-                      ),
-                    ],
+                  LinearProgressIndicator(
+                    value:
+                        rewardStatus!
+                            .progress,
                   ),
 
                   const SizedBox(
-                    height: 10,
+                    height: 20,
                   ),
 
-                  ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(
-                      20,
-                    ),
+                  Text(
+                    '${rewardStatus!.streakDays}일 연속 활동 중 🔥',
 
-                    child:
-                        LinearProgressIndicator(
-                      value: progress,
-
-                      minHeight: 10,
-
-                      backgroundColor:
-                          Colors.white24,
-
-                      valueColor:
-                          const AlwaysStoppedAnimation(
-                        Colors.amber,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(
-                    height: 18,
-                  ),
-
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-
-                    decoration:
-                        BoxDecoration(
-                      color: Colors.orange
-                          .withOpacity(
-                        0.15,
-                      ),
-
-                      borderRadius:
-                          BorderRadius.circular(
-                        14,
-                      ),
-                    ),
-
-                    child: const Row(
-                      children: [
-
-                        Icon(
-                          Icons
-                              .local_fire_department,
-
-                          color:
-                              Colors.orange,
-                        ),
-
-                        SizedBox(width: 8),
-
-                        Text(
-                          '5일 연속 활동 중 🔥',
-
-                          style: TextStyle(
-                            color:
-                                Colors.white,
-
-                            fontWeight:
-                                FontWeight
-                                    .bold,
-                          ),
-                        ),
-                      ],
+                    style:
+                        const TextStyle(
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
-
-            /// =========================
-            /// 액션 버튼
-            /// =========================
 
             Padding(
               padding:
@@ -346,29 +246,29 @@ class _RewardPageState
               child: Row(
                 children: [
 
-                  /// 포인트 상점
                   Expanded(
-                    child:
-                        GestureDetector(
+                    child: GestureDetector(
                       onTap: () {
 
                         Navigator.push(
                           context,
 
                           MaterialPageRoute(
-                            builder: (_) =>
-                                const RewardShopPage(),
+                            builder:
+                                (_) =>
+                                    RewardShopPage(
+                              rewardStatus:
+                                  rewardStatus!,
+                            ),
                           ),
                         );
                       },
 
-                      child: _ActionCard(
+                      child: const _ActionCard(
                         icon: Icons.store,
                         title:
                             '포인트 상점',
-
-                        color:
-                            Colors.blue,
+                        color: Colors.blue,
                       ),
                     ),
                   ),
@@ -377,29 +277,30 @@ class _RewardPageState
                     width: 16,
                   ),
 
-                  /// 등급 혜택
                   Expanded(
-                    child:
-                        GestureDetector(
+                    child: GestureDetector(
                       onTap: () {
 
                         Navigator.push(
                           context,
 
                           MaterialPageRoute(
-                            builder: (_) =>
-                                const RewardBenefitPage(),
+                            builder:
+                                (_) =>
+                                    RewardBenefitPage(
+                              benefits:
+                                  rewardStatus!
+                                      .benefits,
+                            ),
                           ),
                         );
                       },
 
-                      child: _ActionCard(
+                      child: const _ActionCard(
                         icon:
                             Icons.emoji_events,
-
                         title:
                             '등급 혜택',
-
                         color:
                             Colors.orange,
                       ),
@@ -411,18 +312,11 @@ class _RewardPageState
 
             const SizedBox(height: 30),
 
-            /// =========================
-            /// 퀘스트
-            /// =========================
-
-            _buildSectionTitle(
-              '오늘의 퀘스트',
-            ),
-
-            const SizedBox(height: 14),
-
             ListView.builder(
-              itemCount: quests.length,
+              itemCount:
+                  rewardStatus!
+                      .quests
+                      .length,
 
               shrinkWrap: true,
 
@@ -433,18 +327,8 @@ class _RewardPageState
                   (context, index) {
 
                 final quest =
-                    quests[index];
-
-                final completed =
-                    quest['completed']
-                        as bool;
-
-                final int rewardMoney =
-                    quest['rewardMoney'];
-
-                final int rewardPoint =
-                    (rewardMoney * 0.03)
-                        .toInt();
+                    rewardStatus!
+                        .quests[index];
 
                 return Container(
                   margin:
@@ -472,28 +356,10 @@ class _RewardPageState
                     children: [
 
                       CircleAvatar(
-                        backgroundColor:
-                            completed
-                                ? Colors
-                                    .green
-                                    .shade100
-                                : AppColors
-                                    .primary
-                                    .withOpacity(
-                                      0.1,
-                                    ),
-
                         child: Icon(
-                          completed
-                              ? Icons.check
-                              : quest['icon']
-                                  as IconData,
-
-                          color:
-                              completed
-                                  ? Colors.green
-                                  : AppColors
-                                      .primary,
+                          getQuestIcon(
+                            quest.iconKey,
+                          ),
                         ),
                       ),
 
@@ -510,21 +376,7 @@ class _RewardPageState
                           children: [
 
                             Text(
-                              quest['title']
-                                  as String,
-
-                              style:
-                                  TextStyle(
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
-
-                                decoration:
-                                    completed
-                                        ? TextDecoration
-                                            .lineThrough
-                                        : null,
-                              ),
+                              quest.title,
                             ),
 
                             const SizedBox(
@@ -532,65 +384,86 @@ class _RewardPageState
                             ),
 
                             Text(
-                              completed
-                                  ? '리워드 지급 완료'
-                                  : '${quest['progress']} · ${rewardPoint}P 예정',
-
-                              style:
-                                  TextStyle(
-                                color: Colors
-                                    .grey
-                                    .shade600,
-                              ),
+                              quest.progressLabel,
                             ),
                           ],
                         ),
                       ),
 
-                      completed
+                      quest.claimed
+
                           ? const Text(
-                              '완료',
-
-                              style:
-                                  TextStyle(
-                                color:
-                                    Colors.green,
-
-                                fontWeight:
-                                    FontWeight
-                                        .bold,
-                              ),
+                              '수령 완료',
                             )
 
                           : ElevatedButton(
                               onPressed:
-                                  () {
+                                  quest
+                                          .completed
+                                      ? () async {
 
-                                setState(
-                                  () {
+                                          try {
 
-                                    currentPoints +=
-                                        rewardPoint;
+                                            final state =
+                                                AppScope.controllerOf(
+                                                  context,
+                                                ).state;
 
-                                    quest['completed'] =
-                                        true;
-                                  },
-                                );
+                                            final email =
+                                                state
+                                                    .userProfile
+                                                    .email;
 
-                                showDialog(
-                                  context:
-                                      context,
+                                            final json =
+                                                await RewardApi.claimQuest(
+                                              email:
+                                                  email,
 
-                                  builder:
-                                      (_) {
+                                              questCode:
+                                                  quest.code,
+                                            );
 
-                                    return RewardSuccessDialog(
-                                      rewardMoney:
-                                          rewardMoney,
-                                    );
-                                  },
-                                );
-                              },
+                                            setState(
+                                              () {
+
+                                                rewardStatus =
+                                                    RewardStatus.fromJson(
+                                                  json,
+                                                );
+                                              },
+                                            );
+
+                                            showDialog(
+                                              context:
+                                                  context,
+
+                                              builder:
+                                                  (_) {
+
+                                                return RewardSuccessDialog(
+                                                  rewardPoint:
+                                                      quest.rewardPoints,
+                                                );
+                                              },
+                                            );
+                                          } catch (
+                                            e
+                                          ) {
+
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content:
+                                                    Text(
+                                                  e.toString(),
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        }
+
+                                      : null,
 
                               style:
                                   ElevatedButton.styleFrom(
@@ -609,36 +482,7 @@ class _RewardPageState
                 );
               },
             ),
-
-            const SizedBox(height: 50),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(
-    String title,
-  ) {
-
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(
-        horizontal: 20,
-      ),
-
-      child: Align(
-        alignment:
-            Alignment.centerLeft,
-
-        child: Text(
-          title,
-
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight:
-                FontWeight.bold,
-          ),
         ),
       ),
     );
@@ -700,11 +544,6 @@ class _ActionCard
 
           Text(
             title,
-
-            style: const TextStyle(
-              fontWeight:
-                  FontWeight.bold,
-            ),
           ),
         ],
       ),

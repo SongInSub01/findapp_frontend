@@ -1,63 +1,134 @@
 import 'package:flutter/material.dart';
-import 'package:my_flutter_starter/frontend/common/theme/app_colors.dart';
 
-class RewardShopPage extends StatelessWidget {
-  const RewardShopPage({super.key});
+import 'package:my_flutter_starter/frontend/common/theme/app_colors.dart';
+import 'package:my_flutter_starter/frontend/frontend_scope.dart';
+
+import 'reward_model.dart';
+import 'reward_api.dart';
+
+class RewardShopPage extends StatefulWidget {
+
+  const RewardShopPage({
+    super.key,
+    required this.rewardStatus,
+  });
+
+  final RewardStatus rewardStatus;
+
+  @override
+  State<RewardShopPage> createState() =>
+      _RewardShopPageState();
+}
+
+class _RewardShopPageState
+    extends State<RewardShopPage> {
+
+  late RewardStatus rewardStatus;
+
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    rewardStatus = widget.rewardStatus;
+  }
+
+  IconData getItemIcon(
+    String iconKey,
+  ) {
+
+    switch (iconKey) {
+
+      case 'coffee':
+        return Icons.local_cafe;
+
+      case 'store':
+        return Icons.store;
+
+      case 'delivery':
+        return Icons.delivery_dining;
+
+      case 'flash':
+        return Icons.flash_on;
+
+      case 'premium':
+        return Icons.workspace_premium;
+
+      case 'palette':
+        return Icons.palette;
+
+      default:
+        return Icons.card_giftcard;
+    }
+  }
+
+  Future<void> purchaseItem(
+    RewardShopItem item,
+  ) async {
+
+    try {
+
+      setState(() {
+        isLoading = true;
+      });
+
+      final state =
+          AppScope.controllerOf(context)
+              .state;
+
+      final email =
+          state.userProfile.email;
+
+      final json =
+          await RewardApi.purchaseItem(
+        email: email,
+        itemId: item.id,
+      );
+
+      setState(() {
+
+        rewardStatus =
+            RewardStatus.fromJson(
+          json,
+        );
+
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
+        SnackBar(
+          content: Text(
+            '${item.title} 구매 완료!',
+          ),
+        ),
+      );
+    } catch (e) {
+
+      setState(() {
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
+        SnackBar(
+          content: Text(
+            e.toString(),
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
 
-    /// 현재 보유 포인트
-    const int currentPoint = 1850;
-
-    /// 상점 아이템
-    final items = [
-
-      {
-        'title': '커피 쿠폰',
-        'desc': '스타벅스 아메리카노 교환권',
-        'price': '1500P',
-        'icon': Icons.local_cafe,
-      },
-
-      {
-        'title': '편의점 상품권',
-        'desc': '5,000원 모바일 상품권',
-        'price': '3000P',
-        'icon': Icons.store,
-      },
-
-      {
-        'title': '배달 할인 쿠폰',
-        'desc': '배달앱 할인 쿠폰',
-        'price': '2500P',
-        'icon': Icons.delivery_dining,
-      },
-
-      {
-        'title': '포인트 부스터',
-        'desc': '7일 동안 포인트 2배 적립',
-        'price': '1200P',
-        'icon': Icons.flash_on,
-      },
-
-      {
-        'title': '프리미엄 프로필',
-        'desc': '프로필 테두리 변경',
-        'price': '800P',
-        'icon': Icons.workspace_premium,
-      },
-
-      {
-        'title': '닉네임 컬러 변경',
-        'desc': '닉네임 색상 커스텀',
-        'price': '600P',
-        'icon': Icons.palette,
-      },
-    ];
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
+      backgroundColor:
+          const Color(0xFFF5F7FB),
 
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -73,7 +144,8 @@ class RewardShopPage extends StatelessWidget {
 
           style: TextStyle(
             color: Colors.black,
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
           ),
         ),
       ),
@@ -86,25 +158,39 @@ class RewardShopPage extends StatelessWidget {
           /// =========================
 
           Container(
-            margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.all(24),
+            margin:
+                const EdgeInsets.all(
+              20,
+            ),
+
+            padding:
+                const EdgeInsets.all(
+              24,
+            ),
 
             decoration: BoxDecoration(
               borderRadius:
-                  BorderRadius.circular(28),
+                  BorderRadius.circular(
+                28,
+              ),
 
-              gradient: LinearGradient(
+              gradient:
+                  LinearGradient(
                 colors: [
                   AppColors.primary,
+
                   AppColors.primary
-                      .withOpacity(0.85),
+                      .withOpacity(
+                    0.85,
+                  ),
                 ],
               ),
             ),
 
             child: Column(
               crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  CrossAxisAlignment
+                      .start,
 
               children: [
 
@@ -112,25 +198,34 @@ class RewardShopPage extends StatelessWidget {
                   '현재 보유 포인트',
 
                   style: TextStyle(
-                    color: Colors.white70,
+                    color:
+                        Colors.white70,
+
                     fontSize: 15,
                   ),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(
+                  height: 12,
+                ),
 
                 Text(
-                  '$currentPoint P',
+                  '${rewardStatus.currentPoints} P',
 
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     color: Colors.white,
+
                     fontSize: 40,
+
                     fontWeight:
                         FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(
+                  height: 18,
+                ),
 
                 Container(
                   padding:
@@ -139,7 +234,8 @@ class RewardShopPage extends StatelessWidget {
                     vertical: 10,
                   ),
 
-                  decoration: BoxDecoration(
+                  decoration:
+                      BoxDecoration(
                     color: Colors.white24,
 
                     borderRadius:
@@ -152,7 +248,9 @@ class RewardShopPage extends StatelessWidget {
                     '분실물 반환 성공 시 사례금의 일부가 포인트로 적립됩니다.',
 
                     style: TextStyle(
-                      color: Colors.white,
+                      color:
+                          Colors.white,
+
                       fontWeight:
                           FontWeight.w500,
                     ),
@@ -173,11 +271,17 @@ class RewardShopPage extends StatelessWidget {
                 horizontal: 20,
               ),
 
-              itemCount: items.length,
+              itemCount:
+                  rewardStatus
+                      .shopItems
+                      .length,
 
-              itemBuilder: (context, index) {
+              itemBuilder:
+                  (context, index) {
 
-                final item = items[index];
+                final item =
+                    rewardStatus
+                        .shopItems[index];
 
                 return Container(
                   margin:
@@ -186,9 +290,12 @@ class RewardShopPage extends StatelessWidget {
                   ),
 
                   padding:
-                      const EdgeInsets.all(18),
+                      const EdgeInsets.all(
+                    18,
+                  ),
 
-                  decoration: BoxDecoration(
+                  decoration:
+                      BoxDecoration(
                     color: Colors.white,
 
                     borderRadius:
@@ -204,23 +311,28 @@ class RewardShopPage extends StatelessWidget {
                         radius: 30,
 
                         backgroundColor:
-                            AppColors.primary
+                            AppColors
+                                .primary
                                 .withOpacity(
-                              0.12,
-                            ),
+                          0.12,
+                        ),
 
                         child: Icon(
-                          item['icon']
-                              as IconData,
+                          getItemIcon(
+                            item.iconKey,
+                          ),
 
                           color:
-                              AppColors.primary,
+                              AppColors
+                                  .primary,
 
                           size: 30,
                         ),
                       ),
 
-                      const SizedBox(width: 16),
+                      const SizedBox(
+                        width: 16,
+                      ),
 
                       Expanded(
                         child: Column(
@@ -231,8 +343,7 @@ class RewardShopPage extends StatelessWidget {
                           children: [
 
                             Text(
-                              item['title']
-                                  as String,
+                              item.title,
 
                               style:
                                   const TextStyle(
@@ -249,10 +360,10 @@ class RewardShopPage extends StatelessWidget {
                             ),
 
                             Text(
-                              item['desc']
-                                  as String,
+                              item.description,
 
-                              style: TextStyle(
+                              style:
+                                  TextStyle(
                                 color: Colors
                                     .grey
                                     .shade600,
@@ -266,8 +377,7 @@ class RewardShopPage extends StatelessWidget {
                             ),
 
                             Text(
-                              item['price']
-                                  as String,
+                              '${item.pricePoints}P',
 
                               style:
                                   const TextStyle(
@@ -285,48 +395,106 @@ class RewardShopPage extends StatelessWidget {
                         ),
                       ),
 
-                      ElevatedButton(
-                        onPressed: () {
+                      item.purchased
 
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(
+                          ? Container(
+                              padding:
+                                  const EdgeInsets.symmetric(
+                                horizontal:
+                                    16,
 
-                            SnackBar(
-                              content: Text(
-                                '${item['title']} 구매 완료!',
+                                vertical:
+                                    10,
                               ),
+
+                              decoration:
+                                  BoxDecoration(
+                                color:
+                                    Colors
+                                        .green
+                                        .shade100,
+
+                                borderRadius:
+                                    BorderRadius.circular(
+                                  14,
+                                ),
+                              ),
+
+                              child: const Text(
+                                '구매 완료',
+
+                                style:
+                                    TextStyle(
+                                  color:
+                                      Colors
+                                          .green,
+
+                                  fontWeight:
+                                      FontWeight
+                                          .bold,
+                                ),
+                              ),
+                            )
+
+                          : ElevatedButton(
+                              onPressed:
+                                  isLoading
+                                      ? null
+                                      : () {
+
+                                          purchaseItem(
+                                            item,
+                                          );
+                                        },
+
+                              style:
+                                  ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    AppColors
+                                        .primary,
+
+                                padding:
+                                    const EdgeInsets.symmetric(
+                                  horizontal:
+                                      18,
+
+                                  vertical:
+                                      12,
+                                ),
+
+                                shape:
+                                    RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(
+                                    14,
+                                  ),
+                                ),
+                              ),
+
+                              child:
+                                  isLoading
+
+                                      ? const SizedBox(
+                                          width:
+                                              18,
+
+                                          height:
+                                              18,
+
+                                          child:
+                                              CircularProgressIndicator(
+                                            strokeWidth:
+                                                2,
+
+                                            color:
+                                                Colors.white,
+                                          ),
+                                        )
+
+                                      : const Text(
+                                          '구매',
+                                        ),
                             ),
-                          );
-                        },
-
-                        style:
-                            ElevatedButton
-                                .styleFrom(
-                          backgroundColor:
-                              AppColors.primary,
-
-                          padding:
-                              const EdgeInsets
-                                  .symmetric(
-                            horizontal: 18,
-                            vertical: 12,
-                          ),
-
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                              14,
-                            ),
-                          ),
-                        ),
-
-                        child: const Text(
-                          '구매',
-                        ),
-                      ),
                     ],
                   ),
                 );
