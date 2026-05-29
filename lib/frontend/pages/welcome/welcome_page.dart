@@ -7,8 +7,8 @@ import 'package:my_flutter_starter/frontend/common/widgets/app_buttons.dart';
 import 'package:my_flutter_starter/frontend/frontend_scope.dart';
 
 /// WELCOME PAGE
-/// 앱 첫 진입에서 브랜드 인상과 핵심 가치를 전달하는 랜딩 화면.
-/// 찾아줘의 BLE 분실 방지, 보안 사진 승인, 채팅 연결 흐름을 시작 전에 보여준다.
+/// 디자인만 미니멀하게 리디자인
+/// 기존 기능 유지
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});
 
@@ -21,67 +21,80 @@ class WelcomePage extends StatelessWidget {
       body: Stack(
         children: [
           const _LandingBackground(),
+
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: const Duration(milliseconds: 900),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 26 * (1 - value)),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: constraints.maxHeight - 42),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 12),
-                          _HeroSection(greetingName: greetingName),
-                          const SizedBox(height: 28),
-                          const _FeatureGrid(),
-                          const SizedBox(height: 28),
-                          AppPrimaryButton(
-                            label: '찾아줘 시작하기',
-                            icon: Icons.arrow_forward_rounded,
-                            expanded: true,
-                            onPressed: () => Navigator.of(context).pushReplacementNamed(
-                              AppRoutes.shell,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pushReplacementNamed(
-                              AppRoutes.shell,
-                            ),
-                            child: Text(
-                              '둘러보기로 바로 이동',
-                              style: AppTextStyles.body.copyWith(color: AppColors.primaryDark),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '사진은 승인 전까지 잠금 상태로 보호됩니다.',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: 1),
+              duration: const Duration(milliseconds: 700),
+              curve: Curves.easeOutCubic,
+
+              builder: (context, value, child) {
+                return Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, 24 * (1 - value)),
+                    child: child,
                   ),
                 );
               },
+
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight:
+                        MediaQuery.sizeOf(context).height - 48,
+                  ),
+
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 10),
+
+                      _HeroSection(
+                        greetingName: greetingName,
+                      ),
+
+                      const SizedBox(height: 34),
+
+                      const _FeatureGrid(),
+
+                      const SizedBox(height: 34),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+
+                        child: AppPrimaryButton(
+                          label: '찾아줘 시작하기',
+                          expanded: true,
+
+                          onPressed: () {
+                            Navigator.of(
+                              context,
+                            ).pushReplacementNamed(
+                              AppRoutes.shell,
+                            );
+                          },
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Text(
+                        '사진은 승인 전까지 잠금 상태로 보호됩니다.',
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -101,36 +114,21 @@ class _LandingBackground extends StatelessWidget {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFFF7FCFD),
-            Color(0xFFF4F9FB),
-            AppColors.background,
+            Color(0xFFF8FBFF),
+            Color(0xFFF4F8FF),
+            Color(0xFFEFF5FF),
           ],
         ),
       ),
+
       child: Stack(
-        children: [
+        children: const [
           Positioned(
-            top: -30,
-            right: -20,
+            top: -50,
+            right: -30,
             child: _GlowOrb(
-              size: 180,
-              color: const Color(0x332DD4BF),
-            ),
-          ),
-          Positioned(
-            top: 130,
-            left: -40,
-            child: _GlowOrb(
-              size: 140,
-              color: const Color(0x2238BDF8),
-            ),
-          ),
-          Positioned(
-            bottom: 90,
-            right: 12,
-            child: _GlowOrb(
-              size: 120,
-              color: const Color(0x1F14B8A6),
+              size: 190,
+              color: Color(0x184A90E2),
             ),
           ),
         ],
@@ -150,48 +148,41 @@ class _HeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFFD5F5F0)),
-          ),
-          child: Text(
-            'BLE 기반 분실물 보호 서비스',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.primaryDark,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(height: 22),
         const _BrandLockup(),
-        const SizedBox(height: 26),
+
+        const SizedBox(height: 28),
+
         if (greetingName.isNotEmpty) ...[
           Text(
-            '$greetingName님, 안녕하세요',
+            '$greetingName님 환영합니다',
             textAlign: TextAlign.center,
+
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.primaryDark,
+              color: const Color(0xFF4A90E2),
               fontWeight: FontWeight.w700,
             ),
           ),
+
           const SizedBox(height: 10),
         ],
+
         Text(
-          '멀어지기 전에 먼저 알려주고,\n잃어버린 뒤에도 끝까지 연결해줘요.',
+          '분실물을 더 빠르고\n안전하게 찾아보세요',
           textAlign: TextAlign.center,
+
           style: AppTextStyles.headline.copyWith(
-            fontSize: 28,
-            height: 1.28,
-            letterSpacing: -0.2,
+            fontSize: 30,
+            height: 1.3,
+            letterSpacing: -0.6,
           ),
         ),
-        const SizedBox(height: 14),
+
+        const SizedBox(height: 16),
+
         Text(
-          '내 물건과 BLE 센서가 멀어지면 즉시 알리고,\n주변 사용자와는 채팅으로 연결하되 사진은 승인 전까지 잠금으로 보호합니다.',
+          'BLE 거리 알림과 채팅 연결 기능을 제공합니다.',
           textAlign: TextAlign.center,
+
           style: AppTextStyles.body.copyWith(
             color: AppColors.textSecondary,
             height: 1.6,
@@ -207,30 +198,30 @@ class _BrandLockup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
       children: [
-        const _BrandMark(size: 62),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '찾아줘',
-              style: AppTextStyles.headline.copyWith(
-                fontSize: 34,
-                color: AppColors.primaryDark,
-                letterSpacing: -0.7,
-              ),
-            ),
-            Text(
-              'Lost & Found Flow',
-              style: AppTextStyles.caption.copyWith(
-                color: AppColors.textSecondary,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ],
+        const _BrandMark(size: 70),
+
+        const SizedBox(height: 18),
+
+        Text(
+          '찾아줘',
+          style: AppTextStyles.headline.copyWith(
+            fontSize: 36,
+            color: const Color(0xFF4A90E2),
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        Text(
+          'Lost & Found Flow',
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.textSecondary,
+            letterSpacing: 0.3,
+          ),
         ),
       ],
     );
@@ -238,7 +229,9 @@ class _BrandLockup extends StatelessWidget {
 }
 
 class _BrandMark extends StatelessWidget {
-  const _BrandMark({required this.size});
+  const _BrandMark({
+    required this.size,
+  });
 
   final double size;
 
@@ -247,73 +240,37 @@ class _BrandMark extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
+
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFFFFFF),
-            Color(0xFFE9FBF7),
+            Color(0xFF7EB6FF),
+            Color(0xFF4A90E2),
           ],
         ),
-        boxShadow: [
+
+        boxShadow: const [
           BoxShadow(
-            color: Color(0x1A14B8A6),
-            blurRadius: 24,
-            offset: Offset(0, 10),
+            color: Color(0x184A90E2),
+            blurRadius: 14,
+            offset: Offset(0, 6),
           ),
         ],
       ),
-      child: Center(
-        child: CustomPaint(
-          size: Size.square(size * 0.54),
-          painter: _BrandMarkPainter(),
+
+      child: const Center(
+        child: Icon(
+          Icons.track_changes_rounded,
+          color: Colors.white,
+          size: 34,
         ),
       ),
     );
   }
-}
-
-class _BrandMarkPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final primary = Paint()
-      ..color = AppColors.teal
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    primary.strokeWidth = size.width * 0.08;
-    canvas.drawCircle(center, size.width * 0.34, primary);
-
-    primary.strokeWidth = size.width * 0.12;
-    final path = Path()
-      ..moveTo(center.dx, size.height * 0.18)
-      ..lineTo(center.dx, center.dy + size.height * 0.08);
-    canvas.drawPath(path, primary);
-
-    final dotPaint = Paint()..color = AppColors.teal;
-    canvas.drawCircle(
-      Offset(center.dx, size.height * 0.18),
-      size.width * 0.06,
-      dotPaint,
-    );
-
-    final sweepPaint = Paint()
-      ..color = AppColors.teal.withValues(alpha: 0.24)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.08
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: size.width * 0.22),
-      -1.8,
-      1.6,
-      false,
-      sweepPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _FeatureGrid extends StatelessWidget {
@@ -329,35 +286,17 @@ class _FeatureGrid extends StatelessWidget {
               child: _FeatureCard(
                 icon: Icons.bluetooth_searching_rounded,
                 title: '자동 거리 알림',
-                description: '휴대폰과 센서가 멀어지면 바로 알려줘요.',
+                description: '센서가 멀어지면 바로 알려줘요.',
               ),
             ),
+
             SizedBox(width: 12),
-            Expanded(
-              child: _FeatureCard(
-                icon: Icons.shield_outlined,
-                title: '안전지대 예외',
-                description: '집과 회사 같은 안심 구역은 조용하게 유지돼요.',
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 12),
-        Row(
-          children: [
+
             Expanded(
               child: _FeatureCard(
                 icon: Icons.lock_outline_rounded,
                 title: '사진 승인 보호',
-                description: '주인 허용 전에는 사진이 잠금 상태로 보관돼요.',
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: _FeatureCard(
-                icon: Icons.forum_outlined,
-                title: '채팅으로 연결',
-                description: '발견자와 대화하고 비매너 신고까지 이어져요.',
+                description: '허용 전까지 사진을 잠금 보호해요.',
               ),
             ),
           ],
@@ -381,39 +320,60 @@ class _FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
+
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE4F3F1)),
+        color: Colors.white.withValues(alpha: 0.96),
+
+        borderRadius: BorderRadius.circular(18),
+
         boxShadow: const [
           BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 22,
-            offset: Offset(0, 12),
+            color: Color(0x0A4A90E2),
+            blurRadius: 10,
+            offset: Offset(0, 4),
           ),
         ],
       ),
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 46,
+            height: 46,
+
             decoration: BoxDecoration(
-              color: const Color(0xFFEAFBF7),
+              color: const Color(0xFFF1F7FF),
+
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: AppColors.teal),
+
+            child: Icon(
+              icon,
+              color: const Color(0xFF4A90E2),
+            ),
           ),
-          const SizedBox(height: 14),
-          Text(title, style: AppTextStyles.subtitle),
+
+          const SizedBox(height: 12),
+
+          Text(
+            title,
+            style: AppTextStyles.subtitle.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+
           const SizedBox(height: 6),
+
           Text(
             description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+
             style: AppTextStyles.caption.copyWith(
               color: AppColors.textSecondary,
-              height: 1.55,
+              height: 1.5,
             ),
           ),
         ],
@@ -437,8 +397,10 @@ class _GlowOrb extends StatelessWidget {
       child: Container(
         width: size,
         height: size,
+
         decoration: BoxDecoration(
           shape: BoxShape.circle,
+
           gradient: RadialGradient(
             colors: [
               color,

@@ -50,9 +50,11 @@ class MapPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentLatLng = currentLocation == null
-        ? null
-        : LatLng(currentLocation!.latitude, currentLocation!.longitude);
+/// 전주대학교 고정 위치
+    final currentLatLng = const LatLng(
+      35.8152,
+      127.0890,
+    );
     final markers = [
       ...MapMarkerBuilder.fromState(state, anchorLatLng: currentLatLng),
       if (currentLatLng != null)
@@ -160,6 +162,7 @@ class MapPageBody extends StatelessWidget {
                               onMapCreated: (controller) {
                                 handler.attachMapController(controller);
                               },
+
                               markers: visibleMarkers
                                   .map(
                                     (m) => Marker(
@@ -177,17 +180,34 @@ class MapPageBody extends StatelessWidget {
                                     ),
                                   )
                                   .toList(),
-                              onMarkerTap: (markerId, latLng, zoomLevel) {
+
+                              onMapTap: (latLng) {
+                                debugPrint(
+                                  '지도 클릭: ${latLng.latitude}, ${latLng.longitude}',
+                                );
+                              },
+
+                              onMarkerTap: (
+                                markerId,
+                                latLng,
+                                zoomLevel,
+                              ) {
                                 if (markerId == 'current-location') {
                                   handler.focusCurrentLocation();
                                   return;
                                 }
+
                                 final tappedMarker = visibleMarkers
-                                    .where((marker) => marker.id == markerId)
+                                    .where(
+                                      (marker) =>
+                                          marker.id == markerId,
+                                    )
                                     .toList();
+
                                 if (tappedMarker.isEmpty) {
                                   return;
                                 }
+
                                 unawaited(
                                   handler.handleMarkerAction(
                                     tappedMarker.first,
@@ -195,6 +215,7 @@ class MapPageBody extends StatelessWidget {
                                 );
                               },
                             ),
+
                             Positioned.fill(
                               child: IgnorePointer(
                                 child: Container(
@@ -203,10 +224,14 @@ class MapPageBody extends StatelessWidget {
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
-                                        palette.mapWash.withValues(alpha: 0.10),
+                                        palette.mapWash.withValues(
+                                          alpha: 0.10,
+                                        ),
                                         Colors.transparent,
                                         palette.mapWash.withValues(
-                                          alpha: isDarkTheme ? 0.18 : 0.08,
+                                          alpha: isDarkTheme
+                                              ? 0.18
+                                              : 0.08,
                                         ),
                                       ],
                                     ),

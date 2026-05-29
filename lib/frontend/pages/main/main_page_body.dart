@@ -10,7 +10,11 @@ import 'package:my_flutter_starter/frontend/common/widgets/lost_item_card.dart';
 import 'main_page_handler.dart';
 
 class MainPageBody extends StatelessWidget {
-  const MainPageBody({required this.state, required this.handler, super.key});
+  const MainPageBody({
+    required this.state,
+    required this.handler,
+    super.key,
+  });
 
   final AppState state;
   final MainPageHandler handler;
@@ -20,118 +24,221 @@ class MainPageBody extends StatelessWidget {
     final lostCandidates = state.myDevices.where(
       (device) => device.status == ItemStatus.lost,
     );
-    final lostDevice = lostCandidates.isEmpty ? null : lostCandidates.first;
+
+    final lostDevice =
+        lostCandidates.isEmpty ? null : lostCandidates.first;
+
     final unreadNotifications = state.notifications
         .where((item) => !item.isRead)
         .length;
-    final isCompact = MediaQuery.sizeOf(context).width < 390;
+
+    final isCompact =
+        MediaQuery.sizeOf(context).width < 390;
+
     return SafeArea(
       child: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                12,
+                20,
+                24,
+              ),
+
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
                   _Header(
                     name: state.userProfile.name,
-                    unreadNotifications: unreadNotifications,
+                    unreadNotifications:
+                        unreadNotifications,
                     onMenuTap: handler.openMenu,
-                    onBellTap: handler.openNotifications,
+                    onBellTap:
+                        handler.openNotifications,
                   ),
+
                   const SizedBox(height: 18),
+
                   if (lostDevice != null)
                     _LostAlertBanner(
                       device: lostDevice,
-                      onTrackTap: () => handler.trackDevice(lostDevice.id),
-                      onDismissTap: () => handler.dismissAlert(lostDevice.id),
+                      onTrackTap: () =>
+                          handler.trackDevice(
+                            lostDevice.id,
+                          ),
+                      onDismissTap: () =>
+                          handler.dismissAlert(
+                            lostDevice.id,
+                          ),
                       isCompact: isCompact,
                     )
                   else
-                    _SafeBanner(safeZoneCount: state.safeZones.length),
-                  const SizedBox(height: 24),
+                    _SafeBanner(
+                      safeZoneCount:
+                          state.safeZones.length,
+                    ),
+
+                  const SizedBox(height: 28),
+
                   _SectionHeader(
                     title: '등록된 기기',
                     actionLabel: '+ 추가',
-                    onActionTap: () => handler.openBleEditor(),
+                    onActionTap: () =>
+                        handler.openBleEditor(),
                   ),
+
                   const SizedBox(height: 14),
+
                   SizedBox(
                     height: 168,
+
                     child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: state.myDevices.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final device = state.myDevices[index];
-                        return DeviceCard(
-                          device: device,
-                          onTap: () => handler.trackDevice(device.id),
-                        );
-                      },
+                      scrollDirection:
+                          Axis.horizontal,
+
+                      itemCount:
+                          state.myDevices.length,
+
+                      separatorBuilder:
+                          (context, index) =>
+                              const SizedBox(
+                                width: 12,
+                              ),
+
+                      itemBuilder:
+                          (context, index) {
+                            final device =
+                                state.myDevices[index];
+
+                            return DeviceCard(
+                              device: device,
+                              onTap: () =>
+                                  handler
+                                      .trackDevice(
+                                        device.id,
+                                      ),
+                            );
+                          },
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  AppPrimaryButton(
-                    label: '분실물 등록',
-                    icon: Icons.add_rounded,
-                    onPressed: handler.openLostItemEditor,
-                    expanded: true,
-                  ),
-                  const SizedBox(height: 10),
+
+                  const SizedBox(height: 24),
+
+                  /// 분실물 등록
                   SizedBox(
                     width: double.infinity,
+                    height: 56,
+
+                    child: AppPrimaryButton(
+                      label: '분실물 등록',
+
+                      icon: Icons.add_rounded,
+
+                      onPressed:
+                          handler.openLostItemEditor,
+
+                      expanded: true,
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  /// 분실물 탐색
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+
                     child: OutlinedButton.icon(
-                      onPressed: handler.openDiscovery,
-                      icon: const Icon(Icons.manage_search_rounded, size: 18),
-                      label: const Text('분실·습득 탐색'),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton.icon(
-                      onPressed: handler.openRewardEditor,
-                      icon: const Icon(Icons.card_giftcard_rounded, size: 18),
-                      label: const Text('사례금 등록'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryDark,
-                        minimumSize: const Size.fromHeight(44),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
+                      onPressed:
+                          handler.openDiscovery,
+
+                      icon: const Icon(
+                        Icons
+                            .manage_search_rounded,
+                        size: 18,
                       ),
+
+                      label: const Text(
+                        '분실·습득 탐색',
+                      ),
+
+                      style:
+                          OutlinedButton.styleFrom(
+                            foregroundColor:
+                                AppColors
+                                    .primaryDark,
+
+                            side: BorderSide(
+                              color:
+                                  AppColors
+                                      .textSecondary
+                                      .withValues(
+                                        alpha: 0.25,
+                                      ),
+                            ),
+
+                            shape:
+                                RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(
+                                        18,
+                                      ),
+                                ),
+                          ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '사례금은 분실물 등록 이후에 연결해도 됩니다.',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
+
+                  const SizedBox(height: 30),
+
+                  /// 주변 분실물 헤더
                   Row(
                     children: [
                       const Expanded(
-                        child: Text('주변 분실물 리스트', style: AppTextStyles.title),
+                        child: Text(
+                          '주변 분실물 리스트',
+                          style:
+                              AppTextStyles.title,
+                        ),
                       ),
+
                       IconButton(
-                        onPressed: handler.refreshNearbyItems,
+                        onPressed:
+                            handler
+                                .refreshNearbyItems,
+
                         icon: const Icon(
                           Icons.refresh_rounded,
-                          color: AppColors.textTertiary,
+                          color: AppColors
+                              .textTertiary,
                         ),
                       ),
                     ],
                   ),
+
                   const SizedBox(height: 12),
-                  for (final item in state.lostItems)
-                    LostItemCard(
-                      item: item,
-                      onMessage: () => handler.openChatForLostItem(item),
+
+                  /// 주변 분실물 리스트
+                  for (final item
+                      in state.lostItems)
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(
+                            bottom: 12,
+                          ),
+
+                      child: LostItemCard(
+                        item: item,
+
+                        onMessage: () =>
+                            handler
+                                .openChatForLostItem(
+                                  item,
+                                ),
+                      ),
                     ),
                 ],
               ),
@@ -153,6 +260,7 @@ class _Header extends StatelessWidget {
 
   final String name;
   final int unreadNotifications;
+
   final VoidCallback onMenuTap;
   final VoidCallback onBellTap;
 
@@ -162,58 +270,93 @@ class _Header extends StatelessWidget {
       children: [
         InkWell(
           onTap: onMenuTap,
-          borderRadius: BorderRadius.circular(20),
+
+          borderRadius:
+              BorderRadius.circular(20),
+
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 46,
+                height: 46,
+
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(22),
+                  color: const Color(
+                    0xFFEFF6FF,
+                  ),
+
+                  borderRadius:
+                      BorderRadius.circular(
+                        23,
+                      ),
                 ),
+
                 child: const Icon(
                   Icons.person_outline_rounded,
                   color: AppColors.primary,
                 ),
               ),
+
               const SizedBox(width: 12),
+
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
                   Text(
                     '환영합니다',
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+
+                    style: AppTextStyles
+                        .caption
+                        .copyWith(
+                          color: AppColors
+                              .textSecondary,
+                        ),
                   ),
-                  Text('$name 님', style: AppTextStyles.title),
+
+                  Text(
+                    '$name 님',
+                    style:
+                        AppTextStyles.title,
+                  ),
                 ],
               ),
             ],
           ),
         ),
+
         const Spacer(),
+
         IconButton.filledTonal(
           onPressed: onBellTap,
+
           style: IconButton.styleFrom(
             backgroundColor: Colors.white,
-            foregroundColor: AppColors.text,
+            foregroundColor:
+                AppColors.text,
           ),
+
           icon: Stack(
             children: [
-              const Icon(Icons.notifications_none_rounded),
+              const Icon(
+                Icons.notifications_none_rounded,
+              ),
+
               if (unreadNotifications > 0)
                 Positioned(
                   right: 0,
                   top: 0,
+
                   child: Container(
                     width: 8,
                     height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.red,
-                      shape: BoxShape.circle,
-                    ),
+
+                    decoration:
+                        const BoxDecoration(
+                          color: AppColors.red,
+                          shape: BoxShape.circle,
+                        ),
                   ),
                 ),
             ],
@@ -225,7 +368,9 @@ class _Header extends StatelessWidget {
 }
 
 class _SafeBanner extends StatelessWidget {
-  const _SafeBanner({required this.safeZoneCount});
+  const _SafeBanner({
+    required this.safeZoneCount,
+  });
 
   final int safeZoneCount;
 
@@ -233,57 +378,107 @@ class _SafeBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+
+      padding: const EdgeInsets.all(24),
+
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.primaryLight, AppColors.primary],
+          colors: [
+            Color(0xFF5EA2FF),
+            Color(0xFF1565F9),
+          ],
         ),
-        borderRadius: BorderRadius.circular(28),
+
+        borderRadius:
+            BorderRadius.circular(28),
       ),
+
       child: Row(
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(999),
+                    color: Colors.white
+                        .withValues(
+                          alpha: 0.16,
+                        ),
+
+                    borderRadius:
+                        BorderRadius.circular(
+                          999,
+                        ),
                   ),
+
                   child: Text(
                     '안전 모니터링 중',
-                    style: AppTextStyles.caption.copyWith(color: Colors.white),
+
+                    style: AppTextStyles
+                        .caption
+                        .copyWith(
+                          color: Colors.white,
+                          fontWeight:
+                              FontWeight.w700,
+                        ),
                   ),
                 ),
-                const SizedBox(height: 14),
+
+                const SizedBox(height: 16),
+
                 Text(
                   '내 물건이\n안전하게 연결됨',
-                  style: AppTextStyles.headline.copyWith(color: Colors.white),
+
+                  style: AppTextStyles
+                      .headline
+                      .copyWith(
+                        color: Colors.white,
+                        fontSize: 30,
+                        height: 1.25,
+                      ),
                 ),
-                const SizedBox(height: 8),
+
+                const SizedBox(height: 10),
+
                 Text(
                   '안심 구역 $safeZoneCount곳에서 BLE 알림이 자동 완화됩니다.',
-                  style: AppTextStyles.body.copyWith(color: Colors.white70),
+
+                  style: AppTextStyles.body
+                      .copyWith(
+                        color: Colors.white70,
+                        height: 1.5,
+                      ),
                 ),
               ],
             ),
           ),
+
           Container(
-            width: 72,
-            height: 72,
+            width: 78,
+            height: 78,
+
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
+              color: Colors.white
+                  .withValues(
+                    alpha: 0.16,
+                  ),
+
               shape: BoxShape.circle,
             ),
+
             child: const Icon(
               Icons.shield_outlined,
               color: Colors.white,
-              size: 34,
+              size: 36,
             ),
           ),
         ],
@@ -301,59 +496,96 @@ class _LostAlertBanner extends StatelessWidget {
   });
 
   final BleDevice device;
+
   final VoidCallback onTrackTap;
   final VoidCallback onDismissTap;
+
   final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+
+      padding: const EdgeInsets.all(20),
+
       decoration: BoxDecoration(
         color: const Color(0xFFFFF5F5),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFFEE2E2)),
+
+        borderRadius:
+            BorderRadius.circular(24),
+
+        border: Border.all(
+          color: const Color(0xFFFEE2E2),
+        ),
       ),
+
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
         children: [
           Row(
             children: [
-              const Icon(Icons.circle, size: 8, color: AppColors.red),
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.red,
+              ),
+
               const SizedBox(width: 6),
+
               Text(
                 '분실 경고',
-                style: AppTextStyles.body.copyWith(
-                  color: AppColors.red,
-                  fontWeight: FontWeight.w700,
-                ),
+
+                style: AppTextStyles.body
+                    .copyWith(
+                      color: AppColors.red,
+                      fontWeight:
+                          FontWeight.w700,
+                    ),
               ),
-              const Spacer(),
-              const Icon(Icons.warning_amber_rounded, color: AppColors.red),
             ],
           ),
-          const SizedBox(height: 10),
-          Text('${device.name}과의 연결이 끊겼습니다', style: AppTextStyles.title),
-          const SizedBox(height: 6),
+
+          const SizedBox(height: 12),
+
           Text(
-            '마지막 위치: ${device.location} (${device.lastSeen})',
-            style: AppTextStyles.bodySecondary,
+            '${device.name}과 연결이 끊겼습니다',
+
+            style: AppTextStyles.title,
           ),
-          const SizedBox(height: 16),
+
+          const SizedBox(height: 6),
+
+          Text(
+            '마지막 위치: ${device.location}',
+
+            style:
+                AppTextStyles.bodySecondary,
+          ),
+
+          const SizedBox(height: 18),
+
           isCompact
               ? Column(
                   children: [
                     AppPrimaryButton(
                       label: '위치 추적',
-                      icon: Icons.near_me_outlined,
-                      onPressed: onTrackTap,
+                      icon:
+                          Icons.near_me_outlined,
+                      onPressed:
+                          onTrackTap,
                       expanded: true,
                     ),
-                    const SizedBox(height: 10),
+
+                    const SizedBox(
+                      height: 10,
+                    ),
+
                     AppSecondaryButton(
                       label: '오알림 처리',
-                      onPressed: onDismissTap,
+                      onPressed:
+                          onDismissTap,
                       expanded: true,
                     ),
                   ],
@@ -361,20 +593,27 @@ class _LostAlertBanner extends StatelessWidget {
               : Row(
                   children: [
                     Expanded(
-                      child: AppPrimaryButton(
-                        label: '위치 추적',
-                        icon: Icons.near_me_outlined,
-                        onPressed: onTrackTap,
-                        expanded: true,
-                      ),
+                      child:
+                          AppPrimaryButton(
+                            label: '위치 추적',
+                            icon: Icons
+                                .near_me_outlined,
+                            onPressed:
+                                onTrackTap,
+                            expanded: true,
+                          ),
                     ),
+
                     const SizedBox(width: 10),
+
                     Expanded(
-                      child: AppSecondaryButton(
-                        label: '오알림 처리',
-                        onPressed: onDismissTap,
-                        expanded: true,
-                      ),
+                      child:
+                          AppSecondaryButton(
+                            label: '오알림 처리',
+                            onPressed:
+                                onDismissTap,
+                            expanded: true,
+                          ),
                     ),
                   ],
                 ),
@@ -393,14 +632,24 @@ class _SectionHeader extends StatelessWidget {
 
   final String title;
   final String actionLabel;
+
   final VoidCallback onActionTap;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: Text(title, style: AppTextStyles.title)),
-        TextButton(onPressed: onActionTap, child: Text(actionLabel)),
+        Expanded(
+          child: Text(
+            title,
+            style: AppTextStyles.title,
+          ),
+        ),
+
+        TextButton(
+          onPressed: onActionTap,
+          child: Text(actionLabel),
+        ),
       ],
     );
   }

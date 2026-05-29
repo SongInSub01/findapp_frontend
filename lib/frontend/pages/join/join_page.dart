@@ -7,8 +7,7 @@ import 'package:my_flutter_starter/frontend/common/widgets/app_buttons.dart';
 import 'package:my_flutter_starter/frontend/frontend_scope.dart';
 
 /// JOIN PAGE
-/// 처음 찾아줘를 사용하는 사용자가 계정을 만들고 보호 흐름을 시작하는 페이지다.
-/// 이름, 이메일, 비밀번호, 약관 동의와 같은 가입 입력을 이 파일 안에서 함께 처리한다.
+/// 기능 유지 + 디자인만 미니멀 블루 테마로 수정
 class JoinPage extends StatefulWidget {
   const JoinPage({super.key});
 
@@ -17,15 +16,25 @@ class JoinPage extends StatefulWidget {
 }
 
 class _JoinPageState extends State<JoinPage> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _nameController =
+      TextEditingController();
+
+  final TextEditingController _emailController =
+      TextEditingController();
+
+  final TextEditingController _passwordController =
+      TextEditingController();
+
+  final TextEditingController
+  _confirmPasswordController =
+      TextEditingController();
 
   bool _agreeToPolicy = true;
   bool _agreeToMarketing = false;
+
   bool _hidePassword = true;
   bool _hideConfirmPassword = true;
+
   bool _isSubmitting = false;
 
   @override
@@ -34,7 +43,62 @@ class _JoinPageState extends State<JoinPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+
     super.dispose();
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required String hint,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+
+      prefixIcon: Icon(
+        icon,
+        color: const Color(0xFF4A90E2),
+      ),
+
+      suffixIcon: suffixIcon,
+
+      filled: true,
+      fillColor: const Color(0xFFF7FAFF),
+
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 18,
+      ),
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: Color(0xFF4A90E2),
+          width: 1.4,
+        ),
+      ),
+
+      labelStyle: AppTextStyles.body.copyWith(
+        color: AppColors.textSecondary,
+      ),
+
+      hintStyle: AppTextStyles.body.copyWith(
+        color: AppColors.textSecondary
+            .withValues(alpha: 0.7),
+      ),
+    );
   }
 
   @override
@@ -43,168 +107,350 @@ class _JoinPageState extends State<JoinPage> {
       body: Stack(
         children: [
           const _SignupBackground(),
+
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+              padding: const EdgeInsets.fromLTRB(
+                24,
+                24,
+                24,
+                24,
+              ),
+
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: MediaQuery.sizeOf(context).height - 72,
+                  minHeight:
+                      MediaQuery.sizeOf(context).height -
+                      80,
                 ),
+
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+
                   children: [
-                    IconButton.filledTonal(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.92),
-                      ),
-                      icon: const Icon(Icons.chevron_left_rounded),
-                    ),
-                    const SizedBox(height: 18),
-                    const _SignupHero(),
-                    const SizedBox(height: 28),
+                    /// 뒤로가기
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(22),
+                      width: 46,
+                      height: 46,
+
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.96),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: const Color(0xFFE4F3F1)),
+                        color: Colors.white,
+
+                        borderRadius:
+                            BorderRadius.circular(14),
+
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x14000000),
-                            blurRadius: 28,
-                            offset: Offset(0, 14),
+                            color: Color(0x0A4A90E2),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
                           ),
                         ],
                       ),
+
+                      child: IconButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+
+                        icon: const Icon(
+                          Icons.chevron_left_rounded,
+                          color: Color(0xFF4A90E2),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    const _SignupHero(),
+
+                    const SizedBox(height: 28),
+
+                    /// 회원가입 카드
+                    Container(
+                      width: double.infinity,
+
+                      padding: const EdgeInsets.all(24),
+
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+
+                        borderRadius:
+                            BorderRadius.circular(22),
+
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0A4A90E2),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
+
                         children: [
                           Text(
                             '회원가입',
-                            style: AppTextStyles.headline.copyWith(fontSize: 24),
+
+                            style: AppTextStyles.headline
+                                .copyWith(
+                                  fontSize: 25,
+                                  fontWeight:
+                                      FontWeight.w800,
+                                ),
                           ),
-                          const SizedBox(height: 6),
+
+                          const SizedBox(height: 8),
+
                           Text(
-                            '내 물건 상태, 위치 알림, 승인 대기 사진, 채팅 기록을 안전하게 연결할 계정을 만듭니다.',
-                            style: AppTextStyles.body.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(height: 18),
-                          TextField(
-                            controller: _nameController,
-                            textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: '이름',
-                              hintText: '홍길동',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            decoration: const InputDecoration(
-                              labelText: '이메일',
-                              hintText: 'owner@example.com',
-                              prefixIcon: Icon(Icons.mail_outline_rounded),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _passwordController,
-                            obscureText: _hidePassword,
-                            textInputAction: TextInputAction.next,
-                            decoration: InputDecoration(
-                              labelText: '비밀번호',
-                              hintText: '8자 이상 입력',
-                              prefixIcon: const Icon(Icons.lock_outline_rounded),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() => _hidePassword = !_hidePassword);
-                                },
-                                icon: Icon(
-                                  _hidePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
+                            '계정을 만들고 서비스를 시작해 보세요.',
+
+                            style: AppTextStyles.body
+                                .copyWith(
+                                  color: AppColors
+                                      .textSecondary,
                                 ),
-                              ),
-                            ),
                           ),
-                          const SizedBox(height: 12),
+
+                          const SizedBox(height: 24),
+
+                          /// 이름
                           TextField(
-                            controller: _confirmPasswordController,
-                            obscureText: _hideConfirmPassword,
-                            decoration: InputDecoration(
-                              labelText: '비밀번호 확인',
-                              hintText: '동일한 비밀번호 입력',
-                              prefixIcon: const Icon(Icons.verified_user_outlined),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(
-                                    () => _hideConfirmPassword = !_hideConfirmPassword,
-                                  );
-                                },
-                                icon: Icon(
-                                  _hideConfirmPassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
+                            controller:
+                                _nameController,
+
+                            decoration:
+                                _inputDecoration(
+                                  label: '이름',
+                                  hint: '홍길동',
+                                  icon: Icons
+                                      .person_outline_rounded,
                                 ),
-                              ),
-                            ),
                           ),
+
                           const SizedBox(height: 16),
+
+                          /// 이메일
+                          TextField(
+                            controller:
+                                _emailController,
+
+                            keyboardType:
+                                TextInputType
+                                    .emailAddress,
+
+                            decoration:
+                                _inputDecoration(
+                                  label: '이메일',
+                                  hint:
+                                      'owner@example.com',
+                                  icon: Icons
+                                      .mail_outline_rounded,
+                                ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          /// 비밀번호
+                          TextField(
+                            controller:
+                                _passwordController,
+
+                            obscureText:
+                                _hidePassword,
+
+                            decoration:
+                                _inputDecoration(
+                                  label: '비밀번호',
+                                  hint: '8자 이상 입력',
+                                  icon: Icons
+                                      .lock_outline_rounded,
+
+                                  suffixIcon:
+                                      IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _hidePassword =
+                                                !_hidePassword;
+                                          });
+                                        },
+
+                                        icon: Icon(
+                                          _hidePassword
+                                              ? Icons
+                                                    .visibility_outlined
+                                              : Icons
+                                                    .visibility_off_outlined,
+
+                                          color: AppColors
+                                              .textSecondary,
+                                        ),
+                                      ),
+                                ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          /// 비밀번호 확인
+                          TextField(
+                            controller:
+                                _confirmPasswordController,
+
+                            obscureText:
+                                _hideConfirmPassword,
+
+                            decoration:
+                                _inputDecoration(
+                                  label: '비밀번호 확인',
+                                  hint:
+                                      '동일한 비밀번호 입력',
+                                  icon: Icons
+                                      .verified_user_outlined,
+
+                                  suffixIcon:
+                                      IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _hideConfirmPassword =
+                                                !_hideConfirmPassword;
+                                          });
+                                        },
+
+                                        icon: Icon(
+                                          _hideConfirmPassword
+                                              ? Icons
+                                                    .visibility_outlined
+                                              : Icons
+                                                    .visibility_off_outlined,
+
+                                          color: AppColors
+                                              .textSecondary,
+                                        ),
+                                      ),
+                                ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          /// 필수 약관
                           _AgreementTile(
                             value: _agreeToPolicy,
-                            title: '개인정보 처리 및 위치 기반 보호 정책에 동의',
-                            subtitle: '분실물 보호 흐름, 채팅 연결, 승인 요청 처리에 필요합니다.',
+
+                            title:
+                                '개인정보 처리 정책에 동의',
+
+                            subtitle:
+                                '서비스 이용을 위한 필수 항목입니다.',
+
                             onChanged: (value) {
-                              setState(() => _agreeToPolicy = value ?? false);
+                              setState(() {
+                                _agreeToPolicy =
+                                    value ?? false;
+                              });
                             },
                           ),
-                          const SizedBox(height: 8),
+
+                          const SizedBox(height: 10),
+
+                          /// 마케팅
                           _AgreementTile(
-                            value: _agreeToMarketing,
-                            title: '보호 알림 팁과 업데이트 소식 받기',
-                            subtitle: '선택 항목이며 언제든지 설정에서 변경할 수 있습니다.',
+                            value:
+                                _agreeToMarketing,
+
+                            title:
+                                '업데이트 및 알림 수신',
+
+                            subtitle:
+                                '선택 항목이며 언제든 변경 가능합니다.',
+
                             onChanged: (value) {
-                              setState(() => _agreeToMarketing = value ?? false);
+                              setState(() {
+                                _agreeToMarketing =
+                                    value ?? false;
+                              });
                             },
                           ),
-                          const SizedBox(height: 18),
-                          AppPrimaryButton(
-                            label: '회원가입하고 시작하기',
-                            icon: Icons.person_add_alt_1_rounded,
-                            expanded: true,
-                            onPressed: _isSubmitting ? null : _submitSignup,
+
+                          const SizedBox(height: 24),
+
+                          /// 회원가입 버튼
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+
+                            child: AppPrimaryButton(
+                              label:
+                                  _isSubmitting
+                                  ? '가입 중...'
+                                  : '회원가입하고 시작하기',
+
+                              expanded: true,
+
+                              onPressed:
+                                  _isSubmitting
+                                  ? null
+                                  : _submitSignup,
+                            ),
                           ),
-                          const SizedBox(height: 14),
+
+                          const SizedBox(height: 16),
+
+                          /// 보안 안내
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(14),
+
+                            padding:
+                                const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+
                             decoration: BoxDecoration(
-                              color: const Color(0xFFEAFBF7),
-                              borderRadius: BorderRadius.circular(16),
+                              color: const Color(
+                                0xFFF5F9FF,
+                              ),
+
+                              borderRadius:
+                                  BorderRadius.circular(
+                                    16,
+                                  ),
                             ),
+
                             child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Icon(
-                                  Icons.privacy_tip_outlined,
+                                  Icons
+                                      .shield_outlined,
                                   size: 18,
-                                  color: AppColors.teal,
+                                  color: Color(
+                                    0xFF4A90E2,
+                                  ),
                                 ),
-                                const SizedBox(width: 8),
+
+                                const SizedBox(
+                                  width: 8,
+                                ),
+
                                 Expanded(
                                   child: Text(
-                                    '가입 후에도 분실물 사진은 기본 잠금 상태로 유지되며, 주인 승인 전에는 노출되지 않습니다.',
-                                    style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.teal,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                                    '사진은 승인 전까지 안전하게 보호됩니다.',
+
+                                    style: AppTextStyles
+                                        .caption
+                                        .copyWith(
+                                          color:
+                                              const Color(
+                                                0xFF4A90E2,
+                                              ),
+
+                                          fontWeight:
+                                              FontWeight
+                                                  .w700,
+                                        ),
                                   ),
                                 ),
                               ],
@@ -213,17 +459,49 @@ class _JoinPageState extends State<JoinPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 18),
+
+                    /// 로그인 이동
                     Center(
                       child: TextButton(
-                        onPressed: () => Navigator.of(context).pushReplacementNamed(
-                          AppRoutes.login,
-                        ),
-                        child: Text(
-                          '이미 계정이 있나요? 로그인하기',
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.primaryDark,
-                            fontWeight: FontWeight.w700,
+                        onPressed: () {
+                          Navigator.of(context)
+                              .pushReplacementNamed(
+                                AppRoutes.login,
+                              );
+                        },
+
+                        child: RichText(
+                          text: TextSpan(
+                            text:
+                                '이미 계정이 있나요? ',
+
+                            style: AppTextStyles
+                                .body
+                                .copyWith(
+                                  color: AppColors
+                                      .textSecondary,
+                                ),
+
+                            children: [
+                              TextSpan(
+                                text: '로그인하기',
+
+                                style: AppTextStyles
+                                    .body
+                                    .copyWith(
+                                      color:
+                                          const Color(
+                                            0xFF4A90E2,
+                                          ),
+
+                                      fontWeight:
+                                          FontWeight
+                                              .w800,
+                                    ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -242,28 +520,41 @@ class _JoinPageState extends State<JoinPage> {
     if (_nameController.text.trim().isEmpty ||
         _emailController.text.trim().isEmpty ||
         _passwordController.text.trim().isEmpty ||
-        _confirmPasswordController.text.trim().isEmpty) {
+        _confirmPasswordController.text
+            .trim()
+            .isEmpty) {
       _showSnackBar('모든 항목을 입력해 주세요.');
       return;
     }
 
-    if (_passwordController.text.trim().length < 8) {
-      _showSnackBar('비밀번호는 8자 이상으로 입력해 주세요.');
+    if (_passwordController.text.trim().length <
+        8) {
+      _showSnackBar(
+        '비밀번호는 8자 이상으로 입력해 주세요.',
+      );
       return;
     }
 
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showSnackBar('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+    if (_passwordController.text !=
+        _confirmPasswordController.text) {
+      _showSnackBar(
+        '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
+      );
       return;
     }
 
     if (!_agreeToPolicy) {
-      _showSnackBar('필수 동의 항목을 확인해 주세요.');
+      _showSnackBar(
+        '필수 동의 항목을 확인해 주세요.',
+      );
       return;
     }
 
     setState(() => _isSubmitting = true);
-    final controller = AppScope.controllerOf(context);
+
+    final controller = AppScope.controllerOf(
+      context,
+    );
 
     try {
       final userName = await controller.signUp(
@@ -272,26 +563,41 @@ class _JoinPageState extends State<JoinPage> {
         password: _passwordController.text,
         rememberMe: true,
       );
-      if (!mounted) {
-        return;
-      }
-      _showSnackBar('$userName님, 찾아줘 가입이 완료되었습니다.');
-      Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
+
+      if (!mounted) return;
+
+      _showSnackBar(
+        '$userName님, 가입이 완료되었습니다.',
+      );
+
+      Navigator.of(context)
+          .pushReplacementNamed(
+            AppRoutes.welcome,
+          );
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      _showSnackBar(error.toString().replaceFirst('Exception: ', ''));
+      if (!mounted) return;
+
+      _showSnackBar(
+        error.toString().replaceFirst(
+          'Exception: ',
+          '',
+        ),
+      );
     } finally {
       if (mounted) {
-        setState(() => _isSubmitting = false);
+        setState(
+          () => _isSubmitting = false,
+        );
       }
     }
   }
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(message),
+      ),
     );
   }
 }
@@ -306,29 +612,25 @@ class _SignupBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
+
           colors: [
-            Color(0xFFF8FCFC),
-            Color(0xFFF1FBF8),
-            AppColors.background,
+            Color(0xFFF8FBFF),
+            Color(0xFFF4F8FF),
+            Color(0xFFEFF5FF),
           ],
         ),
       ),
+
       child: Stack(
         children: const [
           Positioned(
-            top: -34,
-            right: -16,
-            child: _SignupOrb(size: 184, color: Color(0x242DD4BF)),
-          ),
-          Positioned(
-            top: 150,
-            left: -42,
-            child: _SignupOrb(size: 148, color: Color(0x2038BDF8)),
-          ),
-          Positioned(
-            bottom: 84,
-            right: 10,
-            child: _SignupOrb(size: 126, color: Color(0x1F14B8A6)),
+            top: -60,
+            right: -30,
+
+            child: _SignupOrb(
+              size: 190,
+              color: Color(0x184A90E2),
+            ),
           ),
         ],
       ),
@@ -342,54 +644,57 @@ class _SignupHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
+
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFFD5F5F0)),
-          ),
-          child: Text(
-            '처음 시작하는 보호 설정',
-            style: AppTextStyles.caption.copyWith(
-              color: AppColors.teal,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
         Row(
           children: [
-            const _SignupLogo(size: 54),
-            const SizedBox(width: 14),
+            const _SignupLogo(size: 58),
+
+            const SizedBox(width: 16),
+
             Text(
               '찾아줘',
-              style: AppTextStyles.headline.copyWith(
-                fontSize: 32,
-                color: AppColors.teal,
-                letterSpacing: -0.6,
-              ),
+
+              style: AppTextStyles.headline
+                  .copyWith(
+                    fontSize: 34,
+                    color: const Color(
+                      0xFF4A90E2,
+                    ),
+                    fontWeight:
+                        FontWeight.w900,
+                    letterSpacing: -0.8,
+                  ),
             ),
           ],
         ),
-        const SizedBox(height: 22),
+
+        const SizedBox(height: 24),
+
         Text(
-          '계정을 만들고 내 물건 보호 흐름을\n안전하게 시작하세요.',
-          style: AppTextStyles.headline.copyWith(
-            fontSize: 28,
-            height: 1.28,
-            letterSpacing: -0.2,
-          ),
+          '계정을 만들고\n안전하게 시작해 보세요',
+
+          style: AppTextStyles.headline
+              .copyWith(
+                fontSize: 29,
+                height: 1.3,
+                letterSpacing: -0.4,
+              ),
         ),
-        const SizedBox(height: 12),
+
+        const SizedBox(height: 14),
+
         Text(
-          'BLE 분실 경고, 안전지대, 채팅 연결, 사진 승인 대기 흐름을 내 계정 기준으로 이어갈 수 있습니다.',
-          style: AppTextStyles.body.copyWith(
-            color: AppColors.textSecondary,
-            height: 1.6,
-          ),
+          'BLE 거리 알림과 채팅 연결 기능을 사용할 수 있습니다.',
+
+          style: AppTextStyles.body
+              .copyWith(
+                color:
+                    AppColors.textSecondary,
+                height: 1.6,
+              ),
         ),
       ],
     );
@@ -397,7 +702,9 @@ class _SignupHero extends StatelessWidget {
 }
 
 class _SignupLogo extends StatelessWidget {
-  const _SignupLogo({required this.size});
+  const _SignupLogo({
+    required this.size,
+  });
 
   final double size;
 
@@ -406,20 +713,34 @@ class _SignupLogo extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
+
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+
           colors: [
-            Color(0xFFFFFFFF),
-            Color(0xFFE8FBF7),
+            Color(0xFF7EB6FF),
+            Color(0xFF4A90E2),
           ],
         ),
+
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x184A90E2),
+            blurRadius: 14,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
+
       child: Center(
         child: Icon(
           Icons.radar_rounded,
           size: size * 0.5,
-          color: AppColors.teal,
+          color: Colors.white,
         ),
       ),
     );
@@ -442,37 +763,73 @@ class _AgreementTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding:
+          const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FBFB),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2F2F0)),
+        color: const Color(0xFFF7FAFF),
+
+        borderRadius:
+            BorderRadius.circular(16),
       ),
+
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
         children: [
           Checkbox(
             value: value,
-            activeColor: AppColors.teal,
+
+            activeColor:
+                const Color(0xFF4A90E2),
+
+            shape: RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.circular(5),
+            ),
+
             onChanged: onChanged,
           ),
+
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: 3),
+              padding: const EdgeInsets.only(
+                top: 3,
+              ),
+
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+
                 children: [
                   Text(
                     title,
-                    style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700),
+
+                    style: AppTextStyles.body
+                        .copyWith(
+                          fontWeight:
+                              FontWeight
+                                  .w700,
+                        ),
                   ),
+
                   const SizedBox(height: 4),
+
                   Text(
                     subtitle,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      height: 1.5,
-                    ),
+
+                    style: AppTextStyles
+                        .caption
+                        .copyWith(
+                          color: AppColors
+                              .textSecondary,
+
+                          height: 1.5,
+                        ),
                   ),
                 ],
               ),
@@ -485,19 +842,31 @@ class _AgreementTile extends StatelessWidget {
 }
 
 class _SignupOrb extends StatelessWidget {
-  const _SignupOrb({required this.size, required this.color});
+  const _SignupOrb({
+    required this.size,
+    required this.color,
+  });
 
   final double size;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+
+          gradient: RadialGradient(
+            colors: [
+              color,
+              color.withValues(alpha: 0),
+            ],
+          ),
+        ),
       ),
     );
   }

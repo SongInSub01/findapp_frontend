@@ -7,8 +7,8 @@ import 'package:my_flutter_starter/frontend/common/widgets/app_buttons.dart';
 import 'package:my_flutter_starter/frontend/frontend_scope.dart';
 
 /// LOGIN PAGE
-/// 사용자가 찾아줘 서비스를 시작하기 전에 아이디와 비밀번호로 로그인하는 페이지다.
-/// 아이디와 비밀번호 입력, 로그인 검증, 회원가입 진입을 이 파일 안에서 함께 처리한다.
+/// 기존 기능은 유지하면서
+/// 디자인만 더 심플하고 세련된 블루/하늘색 테마로 리디자인
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -19,6 +19,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
   bool _rememberMe = true;
   bool _hidePassword = true;
   bool _isSubmitting = false;
@@ -30,140 +31,219 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration({
+    required String label,
+    required String hint,
+    required IconData icon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+
+      prefixIcon: Icon(
+        icon,
+        color: const Color(0xFF4A90E2),
+      ),
+
+      suffixIcon: suffixIcon,
+
+      filled: true,
+      fillColor: const Color(0xFFF5F9FF),
+
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 18,
+        vertical: 18,
+      ),
+
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: BorderSide.none,
+      ),
+
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(18),
+        borderSide: const BorderSide(
+          color: Color(0xFF4A90E2),
+          width: 1.5,
+        ),
+      ),
+
+      labelStyle: AppTextStyles.body.copyWith(
+        color: AppColors.textSecondary,
+      ),
+
+      hintStyle: AppTextStyles.body.copyWith(
+        color: AppColors.textSecondary.withValues(alpha: 0.7),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           const _LoginBackground(),
+
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
               child: ConstrainedBox(
                 constraints: BoxConstraints(
-                  minHeight: MediaQuery.sizeOf(context).height - 72,
+                  minHeight: MediaQuery.sizeOf(context).height - 80,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _LoginHero(),
-                    const SizedBox(height: 28),
+
+                    const SizedBox(height: 30),
+
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(22),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.96),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: const Color(0xFFE4F3F1)),
+
+                        borderRadius: BorderRadius.circular(24),
+
+                        border: Border.all(
+                          color: const Color(0xFFE5F0FF),
+                        ),
+
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x14000000),
-                            blurRadius: 28,
-                            offset: Offset(0, 14),
+                            color: Color(0x0D4A90E2),
+                            blurRadius: 20,
+                            offset: Offset(0, 8),
                           ),
                         ],
                       ),
+
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '로그인',
                             style: AppTextStyles.headline.copyWith(
-                              fontSize: 24,
+                              fontSize: 25,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: 6),
+
+                          const SizedBox(height: 8),
+
                           Text(
                             '이메일 또는 로그인 아이디와 비밀번호를 입력해 주세요.',
                             style: AppTextStyles.body.copyWith(
                               color: AppColors.textSecondary,
+                              height: 1.5,
                             ),
                           ),
-                          const SizedBox(height: 18),
+
+                          const SizedBox(height: 24),
+
+                          /// 아이디 입력
                           TextField(
                             controller: _idController,
-                            decoration: const InputDecoration(
-                              labelText: '이메일 또는 로그인 아이디',
-                              hintText: '로그인할 계정을 입력해 주세요',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
+                            decoration: _inputDecoration(
+                              label: '이메일 또는 로그인 아이디',
+                              hint: '로그인할 계정을 입력해 주세요',
+                              icon: Icons.person_outline_rounded,
                             ),
                           ),
-                          const SizedBox(height: 12),
+
+                          const SizedBox(height: 16),
+
+                          /// 비밀번호 입력
                           TextField(
                             controller: _passwordController,
                             obscureText: _hidePassword,
-                            decoration: InputDecoration(
-                              labelText: '비밀번호',
-                              hintText: '비밀번호를 입력해 주세요',
-                              prefixIcon: const Icon(
-                                Icons.lock_outline_rounded,
-                              ),
+                            decoration: _inputDecoration(
+                              label: '비밀번호',
+                              hint: '비밀번호를 입력해 주세요',
+                              icon: Icons.lock_outline_rounded,
+
                               suffixIcon: IconButton(
                                 onPressed: () {
-                                  setState(
-                                    () => _hidePassword = !_hidePassword,
-                                  );
+                                  setState(() {
+                                    _hidePassword = !_hidePassword;
+                                  });
                                 },
                                 icon: Icon(
                                   _hidePassword
                                       ? Icons.visibility_outlined
                                       : Icons.visibility_off_outlined,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+
+                          const SizedBox(height: 14),
+
+                          /// 로그인 유지 + 비밀번호 찾기
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Checkbox(
-                                    value: _rememberMe,
-                                    activeColor: AppColors.teal,
-                                    onChanged: (value) {
-                                      setState(
-                                        () => _rememberMe = value ?? true,
-                                      );
-                                    },
+                              Transform.scale(
+                                scale: 0.95,
+                                child: Checkbox(
+                                  value: _rememberMe,
+                                  activeColor: const Color(0xFF4A90E2),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(5),
                                   ),
-                                  Expanded(
-                                    child: Text(
-                                      '로그인 상태 유지',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: AppTextStyles.body.copyWith(
-                                        color: AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _rememberMe = value ?? true;
+                                    });
+                                  },
+                                ),
                               ),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: _isSubmitting
-                                      ? null
-                                      : _showRecoveryGuide,
-                                  child: const Text('비밀번호 찾기'),
+
+                              Expanded(
+                                child: Text(
+                                  '로그인 상태 유지',
+                                  style: AppTextStyles.body.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+
+                              TextButton(
+                                onPressed: _isSubmitting
+                                    ? null
+                                    : _showRecoveryGuide,
+                                child: Text(
+                                  '비밀번호 찾기',
+                                  style: AppTextStyles.body.copyWith(
+                                    color: const Color(0xFF4A90E2),
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+
+                          const SizedBox(height: 10),
+
+                          /// 로딩
                           if (_isSubmitting) ...[
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
+                                horizontal: 16,
+                                vertical: 14,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8FBFF),
+                                color: const Color(0xFFF5F9FF),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: AppColors.borderLight,
-                                ),
                               ),
                               child: Row(
                                 children: [
@@ -171,13 +251,16 @@ class _LoginPageState extends State<LoginPage> {
                                     width: 18,
                                     height: 18,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
+                                      strokeWidth: 2.3,
+                                      color: Color(0xFF4A90E2),
                                     ),
                                   ),
-                                  const SizedBox(width: 10),
+
+                                  const SizedBox(width: 12),
+
                                   Expanded(
                                     child: Text(
-                                      '로그인 정보를 확인하고 안내 화면으로 이동하고 있습니다.',
+                                      '로그인 정보를 확인하고 있습니다.',
                                       style: AppTextStyles.caption.copyWith(
                                         color: AppColors.textSecondary,
                                       ),
@@ -186,39 +269,65 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 12),
+
+                            const SizedBox(height: 14),
                           ],
-                          AppPrimaryButton(
-                            label: _isSubmitting ? '로그인 중...' : '로그인하고 시작하기',
-                            icon: _isSubmitting
-                                ? Icons.hourglass_top_rounded
-                                : Icons.login_rounded,
-                            expanded: true,
-                            onPressed: _isSubmitting ? null : _submitLogin,
+
+                          /// 로그인 버튼
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: AppPrimaryButton(
+                              label: _isSubmitting
+                                  ? '로그인 중...'
+                                  : '로그인하고 시작하기',
+
+                              icon: _isSubmitting
+                                  ? Icons.hourglass_top_rounded
+                                  : Icons.login_rounded,
+
+                              expanded: true,
+
+                              onPressed:
+                                  _isSubmitting ? null : _submitLogin,
+                            ),
                           ),
+
                           const SizedBox(height: 18),
+
+                          /// 보안 안내
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(14),
+                            padding: const EdgeInsets.all(16),
+
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceTeal,
-                              borderRadius: BorderRadius.circular(16),
+                              color: const Color(0xFFF5F9FF),
+
+                              borderRadius: BorderRadius.circular(18),
+
+                              border: Border.all(
+                                color: const Color(0xFFDDEBFF),
+                              ),
                             ),
+
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Icon(
-                                  Icons.lock_outline_rounded,
-                                  size: 18,
-                                  color: AppColors.teal,
+                                  Icons.shield_outlined,
+                                  color: Color(0xFF4A90E2),
+                                  size: 20,
                                 ),
-                                const SizedBox(width: 8),
+
+                                const SizedBox(width: 10),
+
                                 Expanded(
                                   child: Text(
-                                    '로그인 후에도 분실물 사진은 바로 공개되지 않으며, 주인 승인 후에만 열람됩니다.',
+                                    '로그인 후에도 분실물 사진은 바로 공개되지 않으며,\n주인 승인 후에만 열람됩니다.',
                                     style: AppTextStyles.caption.copyWith(
-                                      color: AppColors.teal,
+                                      color: const Color(0xFF4A90E2),
                                       fontWeight: FontWeight.w700,
+                                      height: 1.5,
                                     ),
                                   ),
                                 ),
@@ -228,19 +337,34 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 18),
+
+                    /// 회원가입
                     Center(
                       child: TextButton(
                         onPressed: _isSubmitting
                             ? null
-                            : () => Navigator.of(
-                                context,
-                              ).pushNamed(AppRoutes.join),
-                        child: Text(
-                          '처음이신가요? 회원가입하기',
-                          style: AppTextStyles.body.copyWith(
-                            color: AppColors.teal,
-                            fontWeight: FontWeight.w700,
+                            : () {
+                                Navigator.of(
+                                  context,
+                                ).pushNamed(AppRoutes.join);
+                              },
+                        child: RichText(
+                          text: TextSpan(
+                            text: '처음이신가요? ',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: '회원가입하기',
+                                style: AppTextStyles.body.copyWith(
+                                  color: const Color(0xFF4A90E2),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -263,6 +387,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     setState(() => _isSubmitting = true);
+
     final controller = AppScope.controllerOf(context);
 
     try {
@@ -271,16 +396,18 @@ class _LoginPageState extends State<LoginPage> {
         password: _passwordController.text,
         rememberMe: _rememberMe,
       );
-      if (!mounted) {
-        return;
-      }
-      _showSnackBar('$userName님 환영합니다. 안내 화면으로 이동합니다.');
+
+      if (!mounted) return;
+
+      _showSnackBar('$userName님 환영합니다.');
+
       Navigator.of(context).pushReplacementNamed(AppRoutes.welcome);
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      _showSnackBar(error.toString().replaceFirst('Exception: ', ''));
+      if (!mounted) return;
+
+      _showSnackBar(
+        error.toString().replaceFirst('Exception: ', ''),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -289,9 +416,12 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(message),
+      ),
+    );
   }
 
   Future<void> _showRecoveryGuide() async {
@@ -299,11 +429,16 @@ class _LoginPageState extends State<LoginPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('비밀번호 찾기'),
-          content: const Text(
-            '등록된 이메일 기준으로 비밀번호 재설정 링크를 전송하는 구조를 붙일 수 있습니다.\n'
-            '현재 프로젝트는 실제 회원가입 API를 통해 생성한 계정으로 로그인합니다.',
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
+
+          title: const Text('비밀번호 찾기'),
+
+          content: const Text(
+            '등록된 이메일 기준으로 비밀번호 재설정 링크를 전송하는 구조를 붙일 수 있습니다.',
+          ),
+
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -326,25 +461,32 @@ class _LoginBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFFF8FCFC), Color(0xFFF2FBF8), AppColors.background],
+          colors: [
+            Color(0xFFF8FBFF),
+            Color(0xFFF3F8FF),
+            Color(0xFFEFF6FF),
+          ],
         ),
       ),
+
       child: Stack(
         children: const [
           Positioned(
-            top: -40,
-            right: -10,
-            child: _LoginOrb(size: 180, color: Color(0x262DD4BF)),
+            top: -50,
+            right: -20,
+            child: _LoginOrb(
+              size: 190,
+              color: Color(0x224A90E2),
+            ),
           ),
+
           Positioned(
-            top: 140,
-            left: -45,
-            child: _LoginOrb(size: 150, color: Color(0x1E38BDF8)),
-          ),
-          Positioned(
-            bottom: 80,
-            right: 8,
-            child: _LoginOrb(size: 130, color: Color(0x1F14B8A6)),
+            bottom: 120,
+            left: -40,
+            child: _LoginOrb(
+              size: 140,
+              color: Color(0x1438BDF8),
+            ),
           ),
         ],
       ),
@@ -361,47 +503,65 @@ class _LoginHero extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 14,
+            vertical: 8,
+          ),
+
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.9),
+
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: const Color(0xFFD5F5F0)),
+
+            border: Border.all(
+              color: const Color(0xFFDCEBFF),
+            ),
           ),
+
           child: Text(
-            '안전한 분실물 보호 흐름',
+            '안전한 분실물 보호 시스템',
             style: AppTextStyles.caption.copyWith(
-              color: AppColors.teal,
-              fontWeight: FontWeight.w700,
+              color: const Color(0xFF4A90E2),
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),
-        const SizedBox(height: 18),
+
+        const SizedBox(height: 22),
+
         Row(
           children: [
-            const _LoginLogo(size: 54),
-            const SizedBox(width: 14),
+            const _LoginLogo(size: 58),
+
+            const SizedBox(width: 16),
+
             Text(
               '찾아줘',
               style: AppTextStyles.headline.copyWith(
-                fontSize: 32,
-                color: AppColors.teal,
-                letterSpacing: -0.6,
+                fontSize: 34,
+                color: const Color(0xFF4A90E2),
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.8,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 22),
+
+        const SizedBox(height: 24),
+
         Text(
-          '내 물건을 더 빨리,\n더 안전하게 찾아줘',
+          '내 물건을 더 빠르고,\n더 안전하게 찾아줘',
           style: AppTextStyles.headline.copyWith(
-            fontSize: 28,
-            height: 1.28,
-            letterSpacing: -0.2,
+            fontSize: 29,
+            height: 1.3,
+            letterSpacing: -0.4,
           ),
         ),
-        const SizedBox(height: 12),
+
+        const SizedBox(height: 14),
+
         Text(
-          'BLE 거리 알림부터 분실 후 채팅 연결, 사진 승인 보호까지\n찾아줘가 자연스럽게 이어줍니다.',
+          'BLE 거리 알림부터 채팅 연결,\n분실물 사진 보호까지 안전하게 연결됩니다.',
           style: AppTextStyles.body.copyWith(
             color: AppColors.textSecondary,
             height: 1.6,
@@ -422,17 +582,33 @@ class _LoginLogo extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(
+
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [Color(0xFFFFFFFF), Color(0xFFE9FBF7)],
+
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF79B8FF),
+            Color(0xFF4A90E2),
+          ],
         ),
+
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x224A90E2),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
+
       child: const Center(
         child: Icon(
           Icons.track_changes_rounded,
-          color: AppColors.teal,
-          size: 28,
+          color: Colors.white,
+          size: 30,
         ),
       ),
     );
@@ -440,7 +616,10 @@ class _LoginLogo extends StatelessWidget {
 }
 
 class _LoginOrb extends StatelessWidget {
-  const _LoginOrb({required this.size, required this.color});
+  const _LoginOrb({
+    required this.size,
+    required this.color,
+  });
 
   final double size;
   final Color color;
@@ -451,9 +630,16 @@ class _LoginOrb extends StatelessWidget {
       child: Container(
         width: size,
         height: size,
+
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
+
+          gradient: RadialGradient(
+            colors: [
+              color,
+              color.withValues(alpha: 0),
+            ],
+          ),
         ),
       ),
     );
