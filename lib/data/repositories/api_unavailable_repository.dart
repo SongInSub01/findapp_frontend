@@ -77,9 +77,48 @@ class ApiUnavailableRepository implements AppRepository {
     required String location,
     required int reward,
     required String description,
+    String? detailLocation,
+    DateTime? happenedAt,
+    double? latitude,
+    double? longitude,
     String? photoAssetPath,
   }) {
     throw Exception('APP_API_BASE_URL이 설정되지 않아 분실물을 저장할 수 없습니다.');
+  }
+
+  @override
+  Future<void> updateLostItem({
+    required String loginId,
+    required String itemId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
+    String? detailLocation,
+    DateTime? happenedAt,
+    String? photoAssetPath,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 분실물을 수정할 수 없습니다.');
+  }
+
+  @override
+  Future<void> markLostItemFound({
+    required String loginId,
+    required String itemId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 찾음 처리를 할 수 없습니다.');
+  }
+
+  @override
+  Future<void> deleteLostItem({
+    required String loginId,
+    required String itemId,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 분실물을 삭제할 수 없습니다.');
   }
 
   @override

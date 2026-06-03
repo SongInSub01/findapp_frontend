@@ -33,14 +33,39 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('탐색'),
+        title: const Text(
+          '탐색',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
+          ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            size: 20,
+            color: Color(0xFF2563EB),
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: '문의하기',
             onPressed: _isBusy ? null : () => _showInquirySheet(controller),
-            icon: const Icon(Icons.support_agent_outlined),
+            icon: const Icon(
+              Icons.support_agent_outlined,
+              color: Color(0xFF2563EB),
+            ),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: const Color(0xFFF1F5F9)),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),

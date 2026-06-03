@@ -50,59 +50,59 @@ class MapPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-/// 전주대학교 고정 위치
-    final currentLatLng = const LatLng(
-      35.8152,
-      127.0890,
-    );
+    // 실제 GPS 위치 사용, 없으면 기본값(전주 전북대)
+    final currentLatLng = currentLocation != null
+        ? LatLng(currentLocation!.latitude, currentLocation!.longitude)
+        : const LatLng(35.8152, 127.0890);
+
     final markers = [
       ...MapMarkerBuilder.fromState(state, anchorLatLng: currentLatLng),
-      if (currentLatLng != null)
-        MapMarkerViewData(
-          id: 'current-location',
-          name: '내 위치',
-          subtitle: '현재 GPS 위치',
-          status: ItemStatus.safe,
-          latLng: currentLatLng,
-          isMine: true,
-          distanceValue: 0,
-          customOverlayContent: _currentLocationOverlayContent(),
-          zIndex: 999,
-        ),
+      MapMarkerViewData(
+        id: 'current-location',
+        name: '내 위치',
+        subtitle: '현재 GPS 위치',
+        status: ItemStatus.safe,
+        latLng: currentLatLng,
+        markerType: MapMarkerType.myDevice,
+        distanceMeters: 0,
+        customOverlayContent: _currentLocationOverlayContent(),
+        zIndex: 999,
+      ),
     ];
+
+    // resolved된 남의 분실물은 지도에서도 숨김
+    final resolvedIds = state.lostItems
+        .where((item) => item.isResolved)
+        .map((item) => item.id)
+        .toSet();
+
     final filteredMarkers = markers.where((marker) {
-      switch (filter) {
-        case MapFilter.all:
-          return true;
-        case MapFilter.lost:
-          return marker.status == ItemStatus.lost;
-        case MapFilter.contact:
-          return marker.status == ItemStatus.contact;
-        case MapFilter.safe:
-          return marker.status == ItemStatus.safe;
-      }
+      if (marker.id == 'current-location') return true;
+      if (resolvedIds.contains(marker.id)) return false;
+      return switch (filter) {
+        MapFilter.all => true,
+        MapFilter.lost => marker.status == ItemStatus.lost,
+        MapFilter.contact => marker.status == ItemStatus.contact,
+        MapFilter.safe => marker.status == ItemStatus.safe,
+      };
     }).toList();
-    final currentLocationMarkers = markers
-        .where((marker) => marker.id == 'current-location')
-        .toList();
-    final visibleMarkers = [
-      ...filteredMarkers.where((marker) => marker.id != 'current-location'),
-      ...currentLocationMarkers.take(1),
-    ];
 
     if (sort == MapSort.distance) {
-      visibleMarkers.sort((a, b) => a.distanceValue.compareTo(b.distanceValue));
+      filteredMarkers.sort(
+        (a, b) => a.distanceMeters.compareTo(b.distanceMeters),
+      );
     }
 
-    final activeChatItemIds = state.chatThreads
-        .map((thread) => thread.itemId)
-        .toSet();
+    final activeChatItemIds =
+        state.chatThreads.map((thread) => thread.itemId).toSet();
+
     final visibleLostItems = _visibleLostItems(
       state.lostItems,
       activeChatItemIds: activeChatItemIds,
       filter: filter,
       sort: sort,
     );
+
     final supportsMapSurface = kIsWeb || supportsNativeKakaoMap;
 
     if (!isVisible) {
@@ -112,8 +112,7 @@ class MapPageBody extends StatelessWidget {
     final isDarkTheme = state.alertSettings.mapTheme == MapThemeMode.dark;
     final palette = _MapThemePalette.forMode(isDarkTheme);
 
-    return SafeArea(
-      child: DecoratedBox(
+    return DecoratedBox(
         decoration: BoxDecoration(
           gradient: isDarkTheme
               ? const LinearGradient(
@@ -139,9 +138,8 @@ class MapPageBody extends StatelessWidget {
           builder: (context, constraints) {
             final sheetMinSize = supportsMapSurface ? 0.20 : 0.18;
             final sheetMaxSize = supportsMapSurface ? 0.84 : 0.92;
-            final resolvedSheetExtent = sheetExtent
-                .clamp(sheetMinSize, sheetMaxSize)
-                .toDouble();
+            final resolvedSheetExtent =
+                sheetExtent.clamp(sheetMinSize, sheetMaxSize).toDouble();
             final sheetInitialSize = resolvedSheetExtent;
             final useSnap = supportsMapSurface;
             final sheetSnapSizes = useSnap
@@ -151,7 +149,9 @@ class MapPageBody extends StatelessWidget {
                     sheetMaxSize,
                   }.toList()
                 : null;
-            final sheetDockHeight = constraints.maxHeight * resolvedSheetExtent;
+            final sheetDockHeight =
+                constraints.maxHeight * resolvedSheetExtent;
+
             return Stack(
               children: [
                 Positioned.fill(
@@ -162,52 +162,41 @@ class MapPageBody extends StatelessWidget {
                               onMapCreated: (controller) {
                                 handler.attachMapController(controller);
                               },
-
-                              markers: visibleMarkers
+                              markers: filteredMarkers
                                   .map(
                                     (m) => Marker(
                                       markerId: m.id,
                                       latLng: m.latLng,
                                       width: m.id == 'current-location'
                                           ? 28
-                                          : 40,
+                                          : m.customOverlayContent != null
+                                              ? 1
+                                              : 40,
                                       height: m.id == 'current-location'
                                           ? 40
-                                          : 40,
+                                          : m.customOverlayContent != null
+                                              ? 1
+                                              : 40,
                                       customOverlayContent:
                                           m.customOverlayContent,
                                       zIndex: m.zIndex,
                                     ),
                                   )
                                   .toList(),
-
                               onMapTap: (latLng) {
                                 debugPrint(
                                   '지도 클릭: ${latLng.latitude}, ${latLng.longitude}',
                                 );
                               },
-
-                              onMarkerTap: (
-                                markerId,
-                                latLng,
-                                zoomLevel,
-                              ) {
+                              onMarkerTap: (markerId, latLng, zoomLevel) {
                                 if (markerId == 'current-location') {
                                   handler.focusCurrentLocation();
                                   return;
                                 }
-
-                                final tappedMarker = visibleMarkers
-                                    .where(
-                                      (marker) =>
-                                          marker.id == markerId,
-                                    )
+                                final tappedMarker = filteredMarkers
+                                    .where((marker) => marker.id == markerId)
                                     .toList();
-
-                                if (tappedMarker.isEmpty) {
-                                  return;
-                                }
-
+                                if (tappedMarker.isEmpty) return;
                                 unawaited(
                                   handler.handleMarkerAction(
                                     tappedMarker.first,
@@ -215,7 +204,6 @@ class MapPageBody extends StatelessWidget {
                                 );
                               },
                             ),
-
                             Positioned.fill(
                               child: IgnorePointer(
                                 child: Container(
@@ -224,14 +212,11 @@ class MapPageBody extends StatelessWidget {
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
-                                        palette.mapWash.withValues(
-                                          alpha: 0.10,
-                                        ),
+                                        palette.mapWash
+                                            .withValues(alpha: 0.10),
                                         Colors.transparent,
                                         palette.mapWash.withValues(
-                                          alpha: isDarkTheme
-                                              ? 0.18
-                                              : 0.08,
+                                          alpha: isDarkTheme ? 0.18 : 0.08,
                                         ),
                                       ],
                                     ),
@@ -243,7 +228,7 @@ class MapPageBody extends StatelessWidget {
                         )
                       : _MapUnavailableView(
                           palette: palette,
-                          itemCount: visibleMarkers.length,
+                          itemCount: filteredMarkers.length,
                           onHomeTap: () =>
                               handler.controller.switchTab(AppTab.main),
                         ),
@@ -316,9 +301,7 @@ class MapPageBody extends StatelessWidget {
                     heroTag: 'locate_map',
                     backgroundColor: palette.fabBackground,
                     foregroundColor: palette.fabForeground,
-                    onPressed: currentLatLng == null
-                        ? onLocateCurrentLocation
-                        : handler.focusCurrentLocation,
+                    onPressed: handler.focusCurrentLocation,
                     child: const Icon(Icons.my_location_outlined),
                   ),
                 ),
@@ -326,10 +309,112 @@ class MapPageBody extends StatelessWidget {
             );
           },
         ),
-      ),
-    );
+      );
   }
 }
+
+// ─────────────────────────────────────────
+// Private helpers
+// ─────────────────────────────────────────
+
+String _formatItemDate(LostItem item) {
+  final raw = item.happenedAt ?? item.createdAt;
+  if (raw != null && raw.isNotEmpty) {
+    try {
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
+    } catch (_) {}
+  }
+  return item.timeLabel;
+}
+
+List<LostItem> _visibleLostItems(
+  List<LostItem> items, {
+  required Set<String> activeChatItemIds,
+  required MapFilter filter,
+  required MapSort sort,
+}) {
+  final filtered = items.where((item) {
+    // resolved 아이템은 바텀시트에서도 숨김
+    if (item.isResolved) return false;
+
+    final displayStatus = _resolveItemStatus(
+      item,
+      hasActiveChat: activeChatItemIds.contains(item.id),
+    );
+    return switch (filter) {
+      MapFilter.all => true,
+      MapFilter.lost => displayStatus == ItemStatus.lost,
+      MapFilter.contact => displayStatus == ItemStatus.contact,
+      MapFilter.safe => displayStatus == ItemStatus.safe,
+    };
+  }).toList();
+
+  if (sort == MapSort.distance) {
+    filtered.sort(
+      (a, b) => MapMarkerBuilder.parseDistanceMeters(a.distance)
+          .compareTo(MapMarkerBuilder.parseDistanceMeters(b.distance)),
+    );
+  }
+
+  return filtered;
+}
+
+MapMarkerViewData _lostItemMarkerData(LostItem item, LatLng? anchorLatLng) {
+  return MapMarkerViewData(
+    id: item.id,
+    name: item.title,
+    subtitle: item.location,
+    status: item.status,
+    latLng: MapMarkerBuilder.toLatLng(item.mapX, item.mapY, anchorLatLng),
+    markerType: MapMarkerType.lostItem,
+    distanceMeters: MapMarkerBuilder.parseDistanceMeters(item.distance),
+  );
+}
+
+ItemStatus _resolveItemStatus(
+  LostItem item, {
+  required bool hasActiveChat,
+}) {
+  if (hasActiveChat) return ItemStatus.contact;
+  if (item.status == ItemStatus.contact) return ItemStatus.lost;
+  return item.status;
+}
+
+String _currentLocationOverlayContent() {
+  return '''
+<div style="
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transform: translateY(-4px);
+">
+  <div style="
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #2563EB;
+    border: 4px solid rgba(37, 99, 235, 0.18);
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.12);
+  "></div>
+  <div style="
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.88);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  ">내 위치</div>
+</div>
+''';
+}
+
+// ─────────────────────────────────────────
+// Sub-widgets
+// ─────────────────────────────────────────
 
 class _MapUnavailableView extends StatelessWidget {
   const _MapUnavailableView({
@@ -611,9 +696,8 @@ class _StatusRailChip extends StatelessWidget {
               Icon(
                 icon,
                 size: 14,
-                color: selected
-                    ? palette.chipSelectedText
-                    : palette.secondaryText,
+                color:
+                    selected ? palette.chipSelectedText : palette.secondaryText,
               ),
               const SizedBox(width: 6),
               Text(
@@ -705,40 +789,60 @@ class _NearbySheet extends StatelessWidget {
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF5EA2FF), Color(0xFF2563EB)],
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
                     child: Row(
                       children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            '주변 분실물 $itemCount건',
-                            style: AppTextStyles.headline.copyWith(
-                              fontSize: 22,
-                              color: palette.textPrimary,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '주변 분실물 $itemCount건',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '가까운 분실물이 먼저 보입니다',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         TextButton.icon(
                           onPressed: onRefresh,
-                          icon: const Icon(Icons.refresh_rounded, size: 18),
-                          label: const Text('새로고침'),
+                          icon: const Icon(Icons.refresh_rounded,
+                              size: 16, color: Colors.white),
+                          label: const Text('새로고침',
+                              style: TextStyle(
+                                  color: Colors.white, fontSize: 12)),
                           style: TextButton.styleFrom(
-                            foregroundColor: palette.primary,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        '지도에서 선택한 분실 정보와 가까운 카드가 먼저 보이도록 정리했습니다.',
-                        style: AppTextStyles.caption.copyWith(
-                          color: palette.secondaryText,
-                        ),
-                      ),
                     ),
                   ),
                   if (currentLocation == null)
@@ -942,7 +1046,7 @@ class _NearbyItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasActiveChat = activeChatItemIds.contains(item.id);
-    final displayStatus = resolveMapItemStatus(
+    final displayStatus = _resolveItemStatus(
       item,
       hasActiveChat: hasActiveChat,
     );
@@ -952,17 +1056,20 @@ class _NearbyItemCard extends StatelessWidget {
         : '탭하면 채팅을 만들고 바로 연결합니다.';
     final photoNote = hasActiveChat
         ? switch (item.photoStatus) {
-            PhotoAccessStatus.approved => '연락 중. 주인 허가 후 사진을 바로 확인할 수 있습니다.',
+            PhotoAccessStatus.approved =>
+              '연락 중. 주인 허가 후 사진을 바로 확인할 수 있습니다.',
             PhotoAccessStatus.pending => '연락 중. 사진 승인 대기 상태입니다.',
             PhotoAccessStatus.locked => '연락 중. 사진은 잠금 상태입니다.',
           }
         : switch (item.photoStatus) {
-            PhotoAccessStatus.approved => '승인 완료. 주인 허가 후 사진을 확인할 수 있습니다.',
+            PhotoAccessStatus.approved =>
+              '승인 완료. 주인 허가 후 사진을 확인할 수 있습니다.',
             PhotoAccessStatus.pending => '승인 대기 중. 주인 확인이 끝나면 사진이 열립니다.',
             PhotoAccessStatus.locked => '사진 잠금 상태. 먼저 주인에게 연락해 주세요.',
           };
     final noteColor = palette.photoNoteForeground(item.photoStatus);
     final noteBackground = palette.photoNoteBackground(item.photoStatus);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(22),
@@ -1025,8 +1132,8 @@ class _NearbyItemCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       _MetaLine(
-                        icon: Icons.schedule_outlined,
-                        text: '${item.timeLabel} · ${item.distance}',
+                        icon: Icons.calendar_today_outlined,
+                        text: _formatItemDate(item),
                         textColor: palette.secondaryText,
                       ),
                       const SizedBox(height: 8),
@@ -1055,7 +1162,8 @@ class _NearbyItemCard extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: noteBackground,
                 borderRadius: BorderRadius.circular(14),
@@ -1066,8 +1174,8 @@ class _NearbyItemCard extends StatelessWidget {
                     item.photoStatus == PhotoAccessStatus.approved
                         ? Icons.verified_outlined
                         : item.photoStatus == PhotoAccessStatus.pending
-                        ? Icons.hourglass_top_rounded
-                        : Icons.lock_outline,
+                            ? Icons.hourglass_top_rounded
+                            : Icons.lock_outline,
                     size: 16,
                     color: noteColor,
                   ),
@@ -1084,7 +1192,8 @@ class _NearbyItemCard extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
               decoration: BoxDecoration(
                 color: palette.primary.withValues(
                   alpha: hasActiveChat ? 0.12 : 0.08,
@@ -1155,6 +1264,10 @@ class _MetaLine extends StatelessWidget {
     );
   }
 }
+
+// ─────────────────────────────────────────
+// Theme palette
+// ─────────────────────────────────────────
 
 class _MapThemePalette {
   const _MapThemePalette({
@@ -1239,36 +1352,27 @@ class _MapThemePalette {
   }
 
   Color statusBackground(ItemStatus status) {
-    switch (status) {
-      case ItemStatus.safe:
-        return safeColor.withValues(alpha: 0.16);
-      case ItemStatus.lost:
-        return lostColor.withValues(alpha: 0.16);
-      case ItemStatus.contact:
-        return contactColor.withValues(alpha: 0.18);
-    }
+    return switch (status) {
+      ItemStatus.safe => safeColor.withValues(alpha: 0.16),
+      ItemStatus.lost => lostColor.withValues(alpha: 0.16),
+      ItemStatus.contact => contactColor.withValues(alpha: 0.18),
+    };
   }
 
   Color photoNoteBackground(PhotoAccessStatus status) {
-    switch (status) {
-      case PhotoAccessStatus.approved:
-        return successSurface;
-      case PhotoAccessStatus.pending:
-        return warningSurface;
-      case PhotoAccessStatus.locked:
-        return neutralSurface;
-    }
+    return switch (status) {
+      PhotoAccessStatus.approved => successSurface,
+      PhotoAccessStatus.pending => warningSurface,
+      PhotoAccessStatus.locked => neutralSurface,
+    };
   }
 
   Color photoNoteForeground(PhotoAccessStatus status) {
-    switch (status) {
-      case PhotoAccessStatus.approved:
-        return successText;
-      case PhotoAccessStatus.pending:
-        return warningText;
-      case PhotoAccessStatus.locked:
-        return secondaryText;
-    }
+    return switch (status) {
+      PhotoAccessStatus.approved => successText,
+      PhotoAccessStatus.pending => warningText,
+      PhotoAccessStatus.locked => secondaryText,
+    };
   }
 
   Color get successSurface =>
@@ -1281,92 +1385,4 @@ class _MapThemePalette {
       isDarkMode ? const Color(0xFF86EFAC) : AppColors.green;
   Color get warningText =>
       isDarkMode ? const Color(0xFFFBBF24) : AppColors.yellow;
-}
-
-String _currentLocationOverlayContent() {
-  return '''
-<div style="
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  transform: translateY(-4px);
-">
-  <div style="
-    width: 18px;
-    height: 18px;
-    border-radius: 999px;
-    background: #2563EB;
-    border: 4px solid rgba(37, 99, 235, 0.18);
-    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.12);
-  "></div>
-  <div style="
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.88);
-    color: white;
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1;
-    white-space: nowrap;
-  ">내 위치</div>
-</div>
-''';
-}
-
-List<LostItem> _visibleLostItems(
-  List<LostItem> items, {
-  required Set<String> activeChatItemIds,
-  required MapFilter filter,
-  required MapSort sort,
-}) {
-  final filtered = items.where((item) {
-    final displayStatus = resolveMapItemStatus(
-      item,
-      hasActiveChat: activeChatItemIds.contains(item.id),
-    );
-    return switch (filter) {
-      MapFilter.all => true,
-      MapFilter.lost => displayStatus == ItemStatus.lost,
-      MapFilter.contact => displayStatus == ItemStatus.contact,
-      MapFilter.safe => displayStatus == ItemStatus.safe,
-    };
-  }).toList();
-
-  if (sort == MapSort.distance) {
-    filtered.sort(
-      (a, b) =>
-          _distanceValue(a.distance).compareTo(_distanceValue(b.distance)),
-    );
-  }
-
-  return filtered;
-}
-
-double _distanceValue(String text) {
-  final parsed = double.tryParse(text.replaceAll(RegExp(r'[^0-9.]'), ''));
-  if (parsed == null) {
-    return 0;
-  }
-  return text.contains('km') ? parsed * 1000 : parsed;
-}
-
-MapMarkerViewData _lostItemMarkerData(LostItem item, LatLng? anchorLatLng) {
-  return MapMarkerViewData(
-    id: item.id,
-    name: item.title,
-    subtitle: item.location,
-    status: item.status,
-    latLng: _convertToLatLng(item.mapX, item.mapY, anchorLatLng),
-    isMine: false,
-    distanceValue: _distanceValue(item.distance),
-  );
-}
-
-LatLng _convertToLatLng(double x, double y, LatLng? anchorLatLng) {
-  final baseLat = anchorLatLng?.latitude ?? 37.5665;
-  final baseLng = anchorLatLng?.longitude ?? 126.9780;
-  final lat = baseLat - ((y - 0.5) * 0.05);
-  final lng = baseLng + ((x - 0.5) * 0.05);
-  return LatLng(lat, lng);
 }

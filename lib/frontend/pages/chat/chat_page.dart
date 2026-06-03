@@ -6,7 +6,6 @@ import 'package:my_flutter_starter/data/models/app_models.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_colors.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_text_styles.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/empty_state.dart';
-import 'package:my_flutter_starter/frontend/common/widgets/inline_feature_panels.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/secure_photo_thumbnail.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/status_badge.dart';
 import 'package:my_flutter_starter/frontend/app_routes.dart';
@@ -36,24 +35,11 @@ class _ChatBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-            child: Row(
-              children: [
-                const Expanded(child: Text('채팅', style: AppTextStyles.headline)),
-                IconButton(
-                  onPressed: () => showNotificationPanel(
-                    context,
-                    controller: controller,
-                    state: state,
-                  ),
-                  icon: const Icon(Icons.notifications_none_rounded),
-                ),
-              ],
-            ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+          child: Text('채팅', style: AppTextStyles.headline),
           ),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -177,8 +163,7 @@ class _ChatBody extends StatelessWidget {
                     itemCount: state.chatThreads.length,
                   ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }

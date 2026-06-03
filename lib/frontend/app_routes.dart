@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'package:my_flutter_starter/data/models/app_models.dart';
+
 import 'pages/chat/chat_detail_page.dart';
 import 'pages/discovery/discovery_page.dart';
 import 'pages/join/join_page.dart';
 import 'pages/login/login_page.dart';
+import 'pages/lost_item/lost_item_detail_page.dart';
 import 'pages/menu/menu_page.dart';
 import 'pages/shell/shell_page.dart';
 import 'pages/welcome/welcome_page.dart';
@@ -17,6 +20,7 @@ abstract final class AppRoutes {
   static const sideMenu = '/menu';
   static const chatDetail = '/chat-detail';
   static const discovery = '/discovery';
+  static const lostItemDetail = '/lost-item-detail';
 }
 
 abstract final class AppRouteFactory {
@@ -58,6 +62,11 @@ abstract final class AppRouteFactory {
         );
       case AppRoutes.discovery:
         return _page(settings: settings, child: const DiscoveryPage());
+      case AppRoutes.lostItemDetail:
+        return _page(
+          settings: settings,
+          child: LostItemDetailPage(item: settings.arguments! as LostItem),
+        );
       default:
         return _page(
           settings: settings,

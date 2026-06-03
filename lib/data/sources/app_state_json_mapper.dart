@@ -125,13 +125,18 @@ abstract final class AppStateJsonMapper {
       photoStatus: _photoStatusFromJson(json['photoStatus'] as String?),
       distance: json['distance'] as String? ?? '',
       ownerName: json['ownerName'] as String? ?? '',
+      isMine: json['isMine'] as bool? ?? false,
       description: json['description'] as String? ?? '',
       sourceDeviceId: json['sourceDeviceId'] as String?,
       mapX: _toDouble(json['mapX']),
       mapY: _toDouble(json['mapY']),
+      listingStatus: _listingWorkflowStatusFromJson(json['listingStatus'] as String?),
+      happenedAt: json['happenedAt'] as String? ?? json['lostAt'] as String?,
+      createdAt: json['createdAt'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       threadId: json['threadId'] as String?,
-      photoAssetPath:
-          json['photoAssetPath'] as String? ?? json['imageUrl'] as String?,
+      photoAssetPath: json['photoAssetPath'] as String? ?? json['imageUrl'] as String?,
     );
   }
 
@@ -147,6 +152,7 @@ abstract final class AppStateJsonMapper {
       photoStatus: _photoStatusFromJson(json['photoStatus'] as String?),
       otherUser: json['otherUser'] as String? ?? '',
       reward: _toInt(json['reward']),
+      photoAssetPath: json['photoAssetPath'] as String?,
       messages: ((json['messages'] as List<dynamic>?) ?? const [])
           .map((item) => _chatMessageFromJson(item as Map<String, dynamic>))
           .toList(),

@@ -182,10 +182,16 @@ class LostItem {
     required this.photoStatus,
     required this.distance,
     required this.ownerName,
+    required this.isMine,
     required this.description,
     required this.sourceDeviceId,
     required this.mapX,
     required this.mapY,
+    this.listingStatus = ListingWorkflowStatus.open,
+    this.happenedAt,
+    this.createdAt,
+    this.latitude,
+    this.longitude,
     this.threadId,
     this.photoAssetPath,
   });
@@ -198,13 +204,21 @@ class LostItem {
   final ItemStatus status;
   final PhotoAccessStatus photoStatus;
   final String distance;
+  final bool isMine;
   final String ownerName;
   final String description;
   final String? sourceDeviceId;
   final double mapX;
   final double mapY;
+  final ListingWorkflowStatus listingStatus;
+  final String? happenedAt;
+  final String? createdAt;
+  final double? latitude;
+  final double? longitude;
   final String? threadId;
   final String? photoAssetPath;
+
+  bool get isResolved => listingStatus == ListingWorkflowStatus.resolved;
 
   LostItem copyWith({
     String? id,
@@ -216,10 +230,16 @@ class LostItem {
     PhotoAccessStatus? photoStatus,
     String? distance,
     String? ownerName,
+    bool? isMine,
     String? description,
     String? sourceDeviceId,
     double? mapX,
     double? mapY,
+    ListingWorkflowStatus? listingStatus,
+    String? happenedAt,
+    String? createdAt,
+    double? latitude,
+    double? longitude,
     String? threadId,
     String? photoAssetPath,
   }) {
@@ -233,10 +253,16 @@ class LostItem {
       photoStatus: photoStatus ?? this.photoStatus,
       distance: distance ?? this.distance,
       ownerName: ownerName ?? this.ownerName,
+      isMine: isMine ?? this.isMine,
       description: description ?? this.description,
       sourceDeviceId: sourceDeviceId ?? this.sourceDeviceId,
       mapX: mapX ?? this.mapX,
       mapY: mapY ?? this.mapY,
+      listingStatus: listingStatus ?? this.listingStatus,
+      happenedAt: happenedAt ?? this.happenedAt,
+      createdAt: createdAt ?? this.createdAt,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       threadId: threadId ?? this.threadId,
       photoAssetPath: photoAssetPath ?? this.photoAssetPath,
     );
@@ -272,6 +298,7 @@ class ChatThread {
     required this.otherUser,
     required this.messages,
     this.reward,
+    this.photoAssetPath,
   });
 
   final String id;
@@ -284,6 +311,7 @@ class ChatThread {
   final PhotoAccessStatus photoStatus;
   final String otherUser;
   final int? reward;
+  final String? photoAssetPath;
   final List<ChatMessage> messages;
 
   ChatThread copyWith({
@@ -297,6 +325,7 @@ class ChatThread {
     PhotoAccessStatus? photoStatus,
     String? otherUser,
     int? reward,
+    String? photoAssetPath,
     List<ChatMessage>? messages,
   }) {
     return ChatThread(
@@ -310,6 +339,7 @@ class ChatThread {
       photoStatus: photoStatus ?? this.photoStatus,
       otherUser: otherUser ?? this.otherUser,
       reward: reward ?? this.reward,
+      photoAssetPath: photoAssetPath ?? this.photoAssetPath,
       messages: messages ?? this.messages,
     );
   }

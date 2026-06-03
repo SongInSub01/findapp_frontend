@@ -4,6 +4,8 @@ import 'package:my_flutter_starter/app/state/app_controller.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
 import 'package:my_flutter_starter/frontend/app_routes.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/inline_feature_panels.dart';
+import 'package:my_flutter_starter/frontend/pages/lost_item/lost_item_editor_page.dart';
+import 'package:my_flutter_starter/frontend/pages/setting/ble_editor_page.dart';
 
 class MainPageHandler {
   MainPageHandler({
@@ -33,16 +35,22 @@ class MainPageHandler {
   }
 
   void openBleEditor({BleDevice? device}) {
-    showBleDeviceEditorPanel(
-      context,
-      controller: controller,
-      state: state,
-      device: device,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BleEditorPage(
+          controller: controller,
+          device: device,
+        ),
+      ),
     );
   }
 
   void openLostItemEditor() {
-    showLostItemEditorPanel(context, controller: controller);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LostItemEditorPage(controller: controller),
+      ),
+    );
   }
 
   void openRewardEditor({String? itemId}) {
@@ -63,6 +71,10 @@ class MainPageHandler {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('주변 BLE 탐색 목록을 갱신했습니다.')));
+  }
+
+  void openLostItemDetail(LostItem item) {
+    Navigator.of(context).pushNamed(AppRoutes.lostItemDetail, arguments: item);
   }
 
   Future<void> openChatForLostItem(LostItem item) async {

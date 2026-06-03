@@ -120,17 +120,22 @@ class SecurePhotoThumbnail extends StatelessWidget {
           ? const Center(
               child: Icon(Icons.image_outlined, color: AppColors.primary),
             )
+          : assetPath!.startsWith('http')
+          ? Image.network(
+              assetPath!,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) =>
+                  progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              errorBuilder: (context, error, stackTrace) => const Center(
+                child: Icon(Icons.broken_image_outlined, color: AppColors.textTertiary),
+              ),
+            )
           : Image.asset(
               assetPath!,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const Center(
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    color: AppColors.textTertiary,
-                  ),
-                );
-              },
+              errorBuilder: (context, error, stackTrace) => const Center(
+                child: Icon(Icons.broken_image_outlined, color: AppColors.textTertiary),
+              ),
             ),
     );
   }

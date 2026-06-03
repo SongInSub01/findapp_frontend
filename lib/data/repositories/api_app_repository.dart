@@ -200,12 +200,19 @@ class ApiAppRepository implements AppRepository {
     required String location,
     required int reward,
     required String description,
+    String? detailLocation,
+    DateTime? happenedAt,
+    double? latitude,
+    double? longitude,
     String? photoAssetPath,
   }) async {
     final trimmedDescription = description.trim();
     final resolvedDescription = trimmedDescription.isEmpty
         ? 'BLE 감지 후 등록된 분실물입니다.'
         : trimmedDescription;
+    final fullLocation = (detailLocation != null && detailLocation.trim().isNotEmpty)
+        ? '$location (${detailLocation.trim()})'
+        : location;
     final images = (photoAssetPath == null || photoAssetPath.isEmpty)
         ? const <Map<String, dynamic>>[]
         : [
@@ -224,8 +231,10 @@ class ApiAppRepository implements AppRepository {
         'title': title,
         'category': '일반 물건',
         'color': '확인 필요',
-        'location': location,
-        'happenedAt': DateTime.now().toIso8601String(),
+        'location': fullLocation,
+        'happenedAt': (happenedAt ?? DateTime.now()).toIso8601String(),
+        'latitude': latitude,
+        'longitude': longitude,
         'reward': reward,
         'listingStatus': 'open',
         'description': resolvedDescription,
@@ -234,6 +243,97 @@ class ApiAppRepository implements AppRepository {
         'images': images,
       },
     );
+  }
+
+  @override
+  Future<void> updateLostItem({
+    required String loginId,
+    required String itemId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
+    String? detailLocation,
+    DateTime? happenedAt,
+    String? photoAssetPath,
+  }) async {
+    final resolvedDescription = description.trim().isEmpty
+        ? 'BLE 감지 후 등록된 분실물입니다.'
+        : description.trim();
+    final fullLocation = (detailLocation != null && detailLocation.trim().isNotEmpty)
+        ? '$location (${detailLocation.trim()})'
+        : location;
+    final images = (photoAssetPath == null || photoAssetPath.isEmpty)
+        ? const <Map<String, dynamic>>[]
+        : [
+            {
+              'imageUrl': photoAssetPath,
+              'fileName': photoAssetPath.split('/').last,
+              'mimeType': 'image/png',
+              'isPrimary': true,
+            },
+          ];
+
+    await _patchJson(
+      '/api/v1/lost-items/$itemId',
+      body: {
+        'loginId': loginId,
+        'title': title,
+        'category': '일반 물건',
+        'color': '확인 필요',
+        'location': fullLocation,
+        'happenedAt': (happenedAt ?? DateTime.now()).toIso8601String(),
+        'reward': reward,
+        'listingStatus': 'open',
+        'description': resolvedDescription,
+        'featureNotes': resolvedDescription,
+        'contactNote': '앱 채팅으로 연락해 주세요.',
+        'images': images,
+      },
+    );
+  }
+
+  @override
+  Future<void> markLostItemFound({
+    required String loginId,
+    required String itemId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
+  }) async {
+    await _patchJson(
+      '/api/v1/lost-items/$itemId',
+      body: {
+        'loginId': loginId,
+        'listingStatus': 'resolved',
+        'title': title,
+        'category': '일반 물건',
+        'color': '확인 필요',
+        'location': location,
+        'happenedAt': DateTime.now().toIso8601String(),
+        'reward': reward,
+        'description': description,
+        'featureNotes': description,
+        'contactNote': '찾음 처리됨',
+        'images': <Map<String, dynamic>>[],
+      },
+    );
+  }
+
+  @override
+  Future<void> deleteLostItem({
+    required String loginId,
+    required String itemId,
+  }) async {
+    final baseUri = Uri.parse(_baseUrl);
+    final uri = baseUri.resolve('/api/v1/lost-items/$itemId').replace(
+      queryParameters: {'loginId': loginId},
+    );
+    final response = await _client.delete(uri);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception('분실물 삭제에 실패했습니다.');
+    }
   }
 
   @override

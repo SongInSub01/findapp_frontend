@@ -458,6 +458,10 @@ class AppController extends ChangeNotifier {
     required String location,
     required int reward,
     required String description,
+    String? detailLocation,
+    DateTime? happenedAt,
+    double? latitude,
+    double? longitude,
     String? photoAssetPath,
   }) async {
     final loginId = _requireActiveLoginId();
@@ -467,7 +471,70 @@ class AppController extends ChangeNotifier {
       location: location,
       reward: reward,
       description: description,
+      detailLocation: detailLocation,
+      happenedAt: happenedAt,
+      latitude: latitude,
+      longitude: longitude,
       photoAssetPath: photoAssetPath,
+    );
+    await _refreshRemoteState(loginId: loginId);
+  }
+
+  Future<void> updateLostItem({
+    required String itemId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
+    String? detailLocation,
+    DateTime? happenedAt,
+    String? photoAssetPath,
+  }) async {
+    final loginId = _requireActiveLoginId();
+    await _repository.updateLostItem(
+      loginId: loginId,
+      itemId: itemId,
+      title: title,
+      location: location,
+      reward: reward,
+      description: description,
+      detailLocation: detailLocation,
+      happenedAt: happenedAt,
+      photoAssetPath: photoAssetPath,
+    );
+    await _refreshRemoteState(loginId: loginId);
+  }
+
+  Future<void> deleteLostItem({required String itemId}) async {
+    final loginId = _requireActiveLoginId();
+    // 낙관적 업데이트: 즉시 목록에서 제거
+    _state = _state.copyWith(
+      lostItems: _state.lostItems.where((i) => i.id != itemId).toList(),
+    );
+    notifyListeners();
+    await _repository.deleteLostItem(loginId: loginId, itemId: itemId);
+    await _refreshRemoteState(loginId: loginId);
+  }
+
+  Future<void> markLostItemFound({required LostItem item}) async {
+    final loginId = _requireActiveLoginId();
+    // 낙관적 업데이트: 즉시 resolved로 변경
+    _state = _state.copyWith(
+      lostItems: _state.lostItems.map((i) {
+        if (i.id == item.id) {
+          return i.copyWith(listingStatus: ListingWorkflowStatus.resolved);
+        }
+        return i;
+      }).toList(),
+    );
+    notifyListeners();
+    await _repository.markLostItemFound(
+      loginId: loginId,
+      itemId: item.id,
+      title: item.title,
+      location: item.location,
+      reward: item.reward,
+      description: item.description.isEmpty ? '찾음 처리됨' : item.description,
     );
     await _refreshRemoteState(loginId: loginId);
   }
@@ -603,7 +670,8 @@ class AppController extends ChangeNotifier {
       lastMessage: '안녕하세요. ${item.title} 관련해서 메시지를 보냈습니다.',
       lastTime: '방금 전',
       unread: 0,
-      photoStatus: item.photoStatus,
+      // 내 물건이 아닌 경우 사진은 항상 잠금 상태로 시작
+      photoStatus: item.isMine ? item.photoStatus : PhotoAccessStatus.locked,
       otherUser: item.ownerName,
       reward: item.reward,
       messages: [

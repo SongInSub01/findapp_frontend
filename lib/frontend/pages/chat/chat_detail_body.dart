@@ -75,6 +75,19 @@ class ChatDetailBody extends StatelessWidget {
     final item = itemCandidates.isEmpty ? null : itemCandidates.first;
     final canApprove = thread.photoStatus == PhotoAccessStatus.pending;
 
+    // 채팅 종료 조건:
+    // 1. item == null → 분실물 삭제됨
+    // 2. item.isResolved → listingStatus=resolved (찾음 처리)
+    // 3. item.status == safe → 서버가 status로만 찾음 반영한 경우
+    // 4. thread.itemStatus == safe → item이 state에 없어도 thread로 판단
+    final isChatClosed = item == null
+        || item!.isResolved
+        || item.status == ItemStatus.safe
+        || thread.itemStatus == ItemStatus.safe;
+    final closedReason = item == null
+        ? '분실물이 삭제되어 채팅이 종료되었습니다.'
+        : '물건을 찾아 채팅이 종료되었습니다.';
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -114,7 +127,7 @@ class ChatDetailBody extends StatelessWidget {
                 children: [
                   SecurePhotoThumbnail(
                     photoStatus: thread.photoStatus,
-                    assetPath: item?.photoAssetPath,
+                    assetPath: thread.photoAssetPath ?? item?.photoAssetPath,
                     size: 64,
                   ),
                   const SizedBox(width: 12),
@@ -194,39 +207,69 @@ class ChatDetailBody extends StatelessWidget {
                 },
               ),
             ),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            // 채팅 종료 배너 or 입력창
+            if (isChatClosed)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  border: Border(
+                    top: BorderSide(color: AppColors.borderLight),
+                  ),
+                ),
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: messageController,
-                        minLines: 1,
-                        maxLines: 4,
-                        decoration: const InputDecoration(
-                          hintText: '메시지를 입력하세요...',
-                        ),
-                      ),
+                    const Icon(
+                      Icons.lock_outline_rounded,
+                      size: 15,
+                      color: AppColors.textSecondary,
                     ),
-                    const SizedBox(width: 10),
-                    IconButton.filled(
-                      onPressed: isSendingMessage
-                          ? null
-                          : () => handler.sendMessage(),
-                      icon: isSendingMessage
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.send_rounded),
+                    const SizedBox(width: 6),
+                    Text(
+                      closedReason,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
+              )
+            else
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: messageController,
+                          minLines: 1,
+                          maxLines: 4,
+                          decoration: const InputDecoration(
+                            hintText: '메시지를 입력하세요...',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton.filled(
+                        onPressed: isSendingMessage
+                            ? null
+                            : () => handler.sendMessage(),
+                        icon: isSendingMessage
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.send_rounded),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
           ],
         ),
       ),

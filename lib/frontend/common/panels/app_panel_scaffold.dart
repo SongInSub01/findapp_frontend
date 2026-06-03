@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
 class AppPanelScaffold extends StatelessWidget {
@@ -21,7 +22,7 @@ class AppPanelScaffold extends StatelessWidget {
       child: Padding(
         padding: EdgeInsets.fromLTRB(
           20,
-          12,
+          4,
           20,
           MediaQuery.viewInsetsOf(context).bottom + 24,
         ),
@@ -30,10 +31,65 @@ class AppPanelScaffold extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: AppTextStyles.title),
-              const SizedBox(height: 6),
-              Text(subtitle, style: AppTextStyles.caption),
-              const SizedBox(height: 18),
+              // 핸들 + 닫기 버튼 행
+              Row(
+                children: [
+                  const Spacer(),
+                  Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.borderStrong,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 18,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 제목 영역
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.title.copyWith(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.text,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
               child,
             ],
           ),

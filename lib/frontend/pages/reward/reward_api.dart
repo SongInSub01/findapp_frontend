@@ -29,6 +29,8 @@ class RewardApi {
         '리워드 요청 URL: $url',
       );
 
+      
+
       final response =
           await http.get(
         Uri.parse(url),
@@ -77,7 +79,11 @@ class RewardApi {
     try {
 
       final url =
-          '$baseUrl/api/v1/rewards/$questCode/claim';
+          '$baseUrl/api/v1/rewards/quests/$questCode/claim';
+
+        debugPrint('===== CLAIM URL =====');
+        debugPrint(url);
+        debugPrint('=====================');
 
       final response =
           await http.post(

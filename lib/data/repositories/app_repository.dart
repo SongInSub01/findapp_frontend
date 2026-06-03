@@ -49,7 +49,37 @@ abstract interface class AppRepository {
     required String location,
     required int reward,
     required String description,
+    String? detailLocation,
+    DateTime? happenedAt,
+    double? latitude,
+    double? longitude,
     String? photoAssetPath,
+  });
+
+  Future<void> updateLostItem({
+    required String loginId,
+    required String itemId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
+    String? detailLocation,
+    DateTime? happenedAt,
+    String? photoAssetPath,
+  });
+
+  Future<void> deleteLostItem({
+    required String loginId,
+    required String itemId,
+  });
+
+  Future<void> markLostItemFound({
+    required String loginId,
+    required String itemId,
+    required String title,
+    required String location,
+    required int reward,
+    required String description,
   });
 
   Future<void> createFoundItem({

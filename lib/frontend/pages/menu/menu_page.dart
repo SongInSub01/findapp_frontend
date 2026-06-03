@@ -9,6 +9,10 @@ import 'package:my_flutter_starter/frontend/common/theme/app_text_styles.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/inline_feature_panels.dart';
 import 'package:my_flutter_starter/frontend/frontend_scope.dart';
 
+import 'package:my_flutter_starter/frontend/pages/lost_item/my_lost_items_page.dart';
+import 'package:my_flutter_starter/frontend/pages/setting/ble_management_page.dart';
+import 'package:my_flutter_starter/frontend/pages/setting/safe_zone_page.dart';
+
 /// MENU PAGE
 /// 프로필, 통계, 보조 메뉴를 보여주는 좌측 사이드 메뉴 페이지다.
 /// 메뉴에서 필요한 카드와 메뉴 액션을 이 파일 안에서 모두 정의한다.
@@ -148,7 +152,13 @@ class _SideMenuBody extends StatelessWidget {
                               title: '내 등록 물건 관리',
                               onTap: () {
                                 Navigator.of(context).pop();
-                                controller.switchTab(AppTab.main);
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const MyLostItemsPage(),
+                                  ),
+                                );
                               },
                             ),
                             _MenuTile(
@@ -156,7 +166,12 @@ class _SideMenuBody extends StatelessWidget {
                               title: 'BLE 기기 관리',
                               onTap: () {
                                 Navigator.of(context).pop();
-                                controller.switchTab(AppTab.setting);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const BleManagementPage(),
+                                  ),
+                                );
                               },
                             ),
                             _MenuTile(
@@ -164,7 +179,12 @@ class _SideMenuBody extends StatelessWidget {
                               title: '안심 구역 설정',
                               onTap: () {
                                 Navigator.of(context).pop();
-                                controller.switchTab(AppTab.setting);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const SafeZonePage(),
+                                  ),
+                                );
                               },
                             ),
                             _MenuTile(

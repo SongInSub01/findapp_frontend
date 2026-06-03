@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:my_flutter_starter/app/state/app_controller.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
 import 'package:my_flutter_starter/frontend/app_routes.dart';
+import 'package:my_flutter_starter/frontend/pages/lost_item/lost_item_detail_page.dart';
 
 import 'map_kakao_bridge.dart';
 import 'map_view_models.dart';
@@ -151,60 +152,24 @@ void focusCurrentLocation() {
   );
 }
 
-  Future<void>
-  handleMarkerAction(
-    MapMarkerViewData marker,
-  ) async {
-
+  Future<void> handleMarkerAction(MapMarkerViewData marker) async {
     if (marker.isMine) {
-
-      controller.switchTab(
-        AppTab.main,
-      );
-
+      controller.switchTab(AppTab.main);
       return;
     }
 
-    try {
+    // 분실물 마커 → 상세 페이지로 이동
+    final lostItem = state.lostItems
+        .where((item) => item.id == marker.id)
+        .firstOrNull;
 
-      final threadId =
-          await controller
-              .openOrCreateChatForItem(
-        marker.id,
-      );
+    if (lostItem == null) return;
 
-      if (!context.mounted) {
-        return;
-      }
-
-      Navigator.of(
-        context,
-      ).pushNamed(
-        AppRoutes.chatDetail,
-        arguments: threadId,
-      );
-
-    } catch (error) {
-
-      if (!context.mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
-
-        SnackBar(
-          content: Text(
-            error
-                .toString()
-                .replaceFirst(
-                  'Exception: ',
-                  '',
-                ),
-          ),
-        ),
-      );
-    }
+    if (!context.mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LostItemDetailPage(item: lostItem),
+      ),
+    );
   }
 }

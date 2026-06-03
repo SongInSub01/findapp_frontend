@@ -107,41 +107,26 @@ class _RewardPageState
         state.userProfile.name;
 
     if (isLoading) {
-      return const Scaffold(
-        body: Center(
-          child:
-              CircularProgressIndicator(),
-        ),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (rewardStatus == null) {
-      return const Scaffold(
-        body: Center(
-          child: Text(
-            '리워드를 불러오지 못했습니다.',
-          ),
-        ),
-      );
+      return const Center(child: Text('리워드를 불러오지 못했습니다.'));
     }
 
-    return Scaffold(
-      backgroundColor:
-          const Color(0xFFF5F7FB),
-
-      appBar: AppBar(
-        title: const Text('리워드'),
-      ),
-
-      body: SingleChildScrollView(
+    return ColoredBox(
+      color: const Color(0xFFF5F7FB),
+      child: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 16, 20, 4),
+              child: Text('리워드', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+            ),
 
             Container(
-              margin:
-                  const EdgeInsets.all(
-                20,
-              ),
+              margin: const EdgeInsets.all(20),
 
               padding:
                   const EdgeInsets.all(
