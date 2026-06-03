@@ -5,6 +5,7 @@ abstract final class AppStateJsonMapper {
     return _rewardStatusFromJson(json);
   }
 
+  /// bootstrap 응답을 앱 전체 상태로 변환한다.
   static AppState fromBootstrapJson(Map<String, dynamic> json) {
     return AppState(
       currentTab: AppTab.main,
@@ -90,6 +91,7 @@ abstract final class AppStateJsonMapper {
     );
   }
 
+  /// BLE 신호, 위치, 배터리 필드를 앱 모델로 변환한다.
   static BleDevice _bleDeviceFromJson(Map<String, dynamic> json) {
     return BleDevice(
       id: json['id'] as String? ?? '',
@@ -123,6 +125,7 @@ abstract final class AppStateJsonMapper {
     );
   }
 
+  /// 분실물 응답의 지도 좌표를 카드/지도에서 쓸 수 있게 변환한다.
   static LostItem _lostItemFromJson(Map<String, dynamic> json) {
     return LostItem(
       id: json['id'] as String? ?? '',
@@ -179,6 +182,7 @@ abstract final class AppStateJsonMapper {
     );
   }
 
+  /// 안전지대 좌표와 반경을 설정 화면/알림 판단에 맞게 변환한다.
   static SafeZone _safeZoneFromJson(Map<String, dynamic> json) {
     return SafeZone(
       id: json['id'] as String? ?? '',

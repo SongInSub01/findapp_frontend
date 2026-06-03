@@ -297,9 +297,6 @@ class _MapSelectPageState
                         latLng,
                         zoomLevel,
                       ) {},
-
-                  onMapTap:
-                      (_) {},
                 ),
 
                 /// 선택된 주소 카드

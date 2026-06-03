@@ -77,6 +77,7 @@ class UserProfile {
   }
 }
 
+/// 백엔드 BLE 응답의 신호, 위치, 배터리 상태를 앱에서 쓰는 모델이다.
 class BleDevice {
   const BleDevice({
     required this.id,
@@ -179,6 +180,7 @@ class BleDevice {
   }
 }
 
+/// 분실물 카드와 지도 표시를 위해 위치 좌표까지 보관한다.
 class LostItem {
   const LostItem({
     required this.id,
@@ -335,6 +337,7 @@ class ChatThread {
   }
 }
 
+/// 안전지대 반경과 좌표를 함께 보관해 BLE 알림 예외 판단에 사용한다.
 class SafeZone {
   const SafeZone({
     required this.id,
@@ -416,6 +419,7 @@ class AlertSettings {
   }
 }
 
+/// 휴대폰 GPS 위치를 백엔드와 동기화하기 위한 모델이다.
 class CurrentLocation {
   const CurrentLocation({
     required this.latitude,
@@ -496,6 +500,7 @@ class ReportRecord {
   final String statusLabel;
 }
 
+/// 검색/목록 화면에서 내 물건 여부와 좌표를 함께 표시하는 요약 모델이다.
 class ListingSummary {
   const ListingSummary({
     required this.id,

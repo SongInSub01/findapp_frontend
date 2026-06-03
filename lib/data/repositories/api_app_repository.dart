@@ -20,6 +20,7 @@ class ApiAppRepository implements AppRepository {
   @override
   AppState loadInitialState() => AppState.empty();
 
+  /// 앱 시작 시 bootstrap API로 화면에 필요한 전체 상태를 가져온다.
   @override
   Future<AppState?> loadLatestState({String? loginId}) async {
     if (_baseUrl.isEmpty || loginId == null || loginId.isEmpty) {
@@ -96,6 +97,7 @@ class ApiAppRepository implements AppRepository {
     return _authUserFromJson(payload['user'] as Map<String, dynamic>);
   }
 
+  /// 휴대폰 GPS 좌표를 백엔드 current_locations에 저장한다.
   @override
   Future<CurrentLocation> upsertCurrentLocation({
     required String loginId,
@@ -142,6 +144,7 @@ class ApiAppRepository implements AppRepository {
     );
   }
 
+  /// 안전지대 이름, 반경, 좌표를 백엔드에 저장한다.
   @override
   Future<void> saveSafeZone({
     required String loginId,
@@ -166,6 +169,7 @@ class ApiAppRepository implements AppRepository {
     await method(path, body: body);
   }
 
+  /// BLE 태그 등록/수정 값을 백엔드 devices API와 동기화한다.
   @override
   Future<void> saveBleDevice({
     required String loginId,
@@ -197,6 +201,7 @@ class ApiAppRepository implements AppRepository {
     await _patchJson('/api/v1/devices/${device.id}', body: body);
   }
 
+  /// 사용자가 등록한 BLE 태그를 백엔드에서도 삭제한다.
   @override
   Future<void> deleteBleDevice({
     required String loginId,
@@ -208,6 +213,7 @@ class ApiAppRepository implements AppRepository {
     );
   }
 
+  /// 분실물 등록 시 위치 설명과 GPS 좌표를 함께 전송한다.
   @override
   Future<void> createLostItem({
     required String loginId,
@@ -262,6 +268,7 @@ class ApiAppRepository implements AppRepository {
     await _postJson('/api/v1/lost-items', body: body);
   }
 
+  /// 습득물 등록 시 지도 표시용 좌표를 함께 전송한다.
   @override
   Future<void> createFoundItem({
     required String loginId,
@@ -396,6 +403,7 @@ class ApiAppRepository implements AppRepository {
     );
   }
 
+  /// 리워드 탭에서 사용할 포인트, 퀘스트, 상점 상태를 가져온다.
   @override
   Future<RewardStatus> loadRewardStatus({required String loginId}) async {
     final baseUri = Uri.parse(_baseUrl);
@@ -440,6 +448,7 @@ class ApiAppRepository implements AppRepository {
     );
   }
 
+  /// BLE 테스트 결과의 RSSI, 위치, 배터리 값을 백엔드에 기록한다.
   @override
   Future<void> refreshBleSignal({
     required String loginId,

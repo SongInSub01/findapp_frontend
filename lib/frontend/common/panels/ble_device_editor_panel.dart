@@ -76,6 +76,7 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
     super.dispose();
   }
 
+  /// 중복 BLE 코드 같은 백엔드 검증 오류를 사용자가 바로 보게 한다.
   Future<void> _showSaveError(Object error) async {
     final message = error.toString().replaceFirst('Exception: ', '');
     await showDialog<void>(

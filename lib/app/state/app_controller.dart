@@ -124,6 +124,7 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 지도 진입 시 현재 GPS를 저장하고 화면 상태를 갱신한다.
   Future<void> saveCurrentLocation({
     required double latitude,
     required double longitude,
@@ -179,6 +180,7 @@ class AppController extends ChangeNotifier {
     return loginId;
   }
 
+  /// 저장/수정 이후 백엔드 최신 상태를 다시 받아 화면을 맞춘다.
   Future<void> _refreshRemoteState({
     String? loginId,
     bool preserveLocalChatThreads = false,
@@ -393,6 +395,7 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: updatedUser.loginId);
   }
 
+  /// BLE 기기 등록과 수정을 같은 흐름으로 처리한다.
   Future<void> saveBleDevice(BleDevice device) async {
     final loginId = _requireActiveLoginId();
     final index = _state.myDevices.indexWhere((item) => item.id == device.id);
@@ -404,6 +407,7 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  /// BLE 기기를 삭제한 뒤 서버 상태로 목록을 다시 맞춘다.
   Future<void> deleteBleDevice(String deviceId) async {
     final loginId = _requireActiveLoginId();
     await _repository.deleteBleDevice(loginId: loginId, deviceId: deviceId);
@@ -416,6 +420,7 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId, preserveLocalChatThreads: true);
   }
 
+  /// 실제 BLE 스캔 결과를 서버에 보내고 로컬 화면도 즉시 갱신한다.
   Future<void> testBleDevice(
     String deviceId, {
     int? rssi,
@@ -475,6 +480,7 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 분실물 등록 데이터를 백엔드에 저장하고 목록을 새로고침한다.
   Future<void> saveLostItem({
     required String title,
     required String location,
@@ -500,6 +506,7 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  /// 습득물 등록 데이터를 백엔드에 저장하고 목록을 새로고침한다.
   Future<void> saveFoundItem({
     required String title,
     required String location,
@@ -573,6 +580,7 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  /// 리워드 화면의 최신 포인트/퀘스트 상태를 가져온다.
   Future<void> refreshRewardStatus() async {
     final loginId = _requireActiveLoginId();
     final rewardStatus = await _repository.loadRewardStatus(loginId: loginId);
@@ -614,6 +622,7 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  /// 분실물 카드에서 채팅방을 열고 필요하면 로컬 임시 스레드를 만든다.
   Future<String> openOrCreateChatForItem(String itemId) async {
     final loginId = _requireActiveLoginId();
     final item = _state.lostItems.where((entry) => entry.id == itemId).toList();
