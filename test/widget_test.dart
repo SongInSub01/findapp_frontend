@@ -15,7 +15,10 @@ void main() {
 
   Future<void> tapNavDestination(WidgetTester tester, int index) async {
     final navRect = tester.getRect(find.byType(NavigationBar));
-    final step = navRect.width / 4;
+    final destinationCount = tester
+        .widgetList<NavigationDestination>(find.byType(NavigationDestination))
+        .length;
+    final step = navRect.width / destinationCount;
     await tester.tapAt(
       Offset(navRect.left + step * (index + 0.5), navRect.center.dy),
     );

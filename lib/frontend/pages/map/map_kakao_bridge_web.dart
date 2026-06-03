@@ -25,6 +25,22 @@ class Marker {
   final int zIndex;
 }
 
+class Circle {
+  const Circle({
+    required this.circleId,
+    required this.center,
+    required this.radiusMeters,
+    required this.strokeColor,
+    required this.fillColor,
+  });
+
+  final String circleId;
+  final LatLng center;
+  final double radiusMeters;
+  final Color strokeColor;
+  final Color fillColor;
+}
+
 class KakaoMapController {
   void setCenter(LatLng latLng) {}
 }
@@ -33,14 +49,16 @@ class KakaoMap extends StatelessWidget {
   const KakaoMap({
     required this.onMapCreated,
     required this.markers,
+    this.circles = const [],
     required this.onMarkerTap,
     super.key,
   });
 
   final ValueChanged<KakaoMapController> onMapCreated;
   final List<Marker> markers;
+  final List<Circle> circles;
   final void Function(String markerId, LatLng latLng, int zoomLevel)
-      onMarkerTap;
+  onMarkerTap;
 
   @override
   Widget build(BuildContext context) {
@@ -69,14 +87,22 @@ class KakaoMap extends StatelessWidget {
               painter: _GridPainter(accent: accent.withValues(alpha: 0.08)),
             ),
           ),
+          for (final circle in circles)
+            Positioned(
+              left: _circleLeft(circle),
+              top: _circleTop(circle),
+              child: _TestRadiusCircle(
+                radiusPixels: _circleRadiusPixels(circle),
+                strokeColor: circle.strokeColor,
+                fillColor: circle.fillColor,
+              ),
+            ),
           for (final marker in markers)
             Positioned(
               left: _markerLeft(marker),
               top: _markerTop(marker),
               child: _TestMarkerDot(
-                label: marker.markerId == 'current-location'
-                    ? '내 위치'
-                    : '주변',
+                label: marker.markerId == 'current-location' ? '내 위치' : '주변',
                 color: marker.markerId == 'current-location'
                     ? accent
                     : const Color(0xFFF97316),
@@ -93,17 +119,65 @@ class KakaoMap extends StatelessWidget {
   }
 
   double _markerTop(Marker marker) {
-    final lng =
-        marker.latLng.longitude.toStringAsFixed(4).hashCode.abs() % 220;
+    final lng = marker.latLng.longitude.toStringAsFixed(4).hashCode.abs() % 220;
     return 60 + lng.toDouble();
+  }
+
+  double _circleLeft(Circle circle) {
+    final marker = Marker(
+      markerId: circle.circleId,
+      latLng: circle.center,
+      width: 0,
+      height: 0,
+    );
+    return _markerLeft(marker) - _circleRadiusPixels(circle);
+  }
+
+  double _circleTop(Circle circle) {
+    final marker = Marker(
+      markerId: circle.circleId,
+      latLng: circle.center,
+      width: 0,
+      height: 0,
+    );
+    return _markerTop(marker) - _circleRadiusPixels(circle);
+  }
+
+  double _circleRadiusPixels(Circle circle) {
+    return circle.radiusMeters.clamp(3, 100).toDouble() * 0.7 + 12;
+  }
+}
+
+class _TestRadiusCircle extends StatelessWidget {
+  const _TestRadiusCircle({
+    required this.radiusPixels,
+    required this.strokeColor,
+    required this.fillColor,
+  });
+
+  final double radiusPixels;
+  final Color strokeColor;
+  final Color fillColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: radiusPixels * 2,
+      height: radiusPixels * 2,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: fillColor.withValues(alpha: 0.22),
+        border: Border.all(
+          color: strokeColor.withValues(alpha: 0.85),
+          width: 2,
+        ),
+      ),
+    );
   }
 }
 
 class _TestMarkerDot extends StatelessWidget {
-  const _TestMarkerDot({
-    required this.label,
-    required this.color,
-  });
+  const _TestMarkerDot({required this.label, required this.color});
 
   final String label;
   final Color color;

@@ -57,6 +57,7 @@ class FakeAppRepository implements AppRepository {
       recentFoundListings: const [],
       suggestedMatches: const [],
       inquiries: const [],
+      rewardStatus: RewardStatus.empty(),
       availableCategories: const [],
       availableColors: const [],
       searchResults: const [],
@@ -153,6 +154,12 @@ class FakeAppRepository implements AppRepository {
   }) async {}
 
   @override
+  Future<void> deleteBleDevice({
+    required String loginId,
+    required String deviceId,
+  }) async {}
+
+  @override
   Future<void> createLostItem({
     required String loginId,
     required String title,
@@ -160,6 +167,9 @@ class FakeAppRepository implements AppRepository {
     required int reward,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) async {}
 
   @override
@@ -169,6 +179,9 @@ class FakeAppRepository implements AppRepository {
     required String location,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) async {}
 
   @override
@@ -203,9 +216,35 @@ class FakeAppRepository implements AppRepository {
   }) async {}
 
   @override
+  Future<RewardStatus> loadRewardStatus({required String loginId}) async {
+    return RewardStatus.empty();
+  }
+
+  @override
+  Future<RewardStatus> claimRewardQuest({
+    required String loginId,
+    required String questCode,
+  }) async {
+    return RewardStatus.empty();
+  }
+
+  @override
+  Future<RewardStatus> purchaseRewardShopItem({
+    required String loginId,
+    required String itemId,
+  }) async {
+    return RewardStatus.empty();
+  }
+
+  @override
   Future<void> refreshBleSignal({
     required String loginId,
     required String deviceId,
+    int? rssi,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
+    int? batteryPercent,
   }) async {}
 
   @override

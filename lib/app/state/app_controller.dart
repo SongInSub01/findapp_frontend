@@ -217,9 +217,7 @@ class AppController extends ChangeNotifier {
       _state = latestState;
     }
     if (preserveLocalReports && preservedReports.isNotEmpty) {
-      final remoteReportKeys = latestState.reports
-          .map(_reportKey)
-          .toSet();
+      final remoteReportKeys = latestState.reports.map(_reportKey).toSet();
       final localReportsByKey = {
         for (final report in preservedReports) _reportKey(report): report,
       };
@@ -406,16 +404,26 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  Future<void> deleteBleDevice(String deviceId) async {
+    final loginId = _requireActiveLoginId();
+    await _repository.deleteBleDevice(loginId: loginId, deviceId: deviceId);
+    await _refreshRemoteState(loginId: loginId);
+  }
+
   Future<void> markChatThreadRead(String threadId) async {
     final loginId = _requireActiveLoginId();
     await _repository.markChatThreadRead(loginId: loginId, threadId: threadId);
-    await _refreshRemoteState(
-      loginId: loginId,
-      preserveLocalChatThreads: true,
-    );
+    await _refreshRemoteState(loginId: loginId, preserveLocalChatThreads: true);
   }
 
-  Future<void> testBleDevice(String deviceId) async {
+  Future<void> testBleDevice(
+    String deviceId, {
+    int? rssi,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
+    int? batteryPercent,
+  }) async {
     final deviceIndex = _state.myDevices.indexWhere(
       (item) => item.id == deviceId,
     );
@@ -424,8 +432,14 @@ class AppController extends ChangeNotifier {
     }
     final device = _state.myDevices[deviceIndex];
     final loginId = _requireActiveLoginId();
-    unawaited(
-      _repository.refreshBleSignal(loginId: loginId, deviceId: deviceId),
+    await _repository.refreshBleSignal(
+      loginId: loginId,
+      deviceId: deviceId,
+      rssi: rssi,
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
+      batteryPercent: batteryPercent,
     );
     _state = _state.copyWith(
       myDevices: _state.myDevices.map((item) {
@@ -436,13 +450,21 @@ class AppController extends ChangeNotifier {
           status: ItemStatus.safe,
           lastSeen: '방금 전',
           lastSignalAt: DateTime.now().toIso8601String(),
+          lastRssi: rssi,
+          lastDetectedLatitude: latitude,
+          lastDetectedLongitude: longitude,
+          lastDetectedAccuracyMeters: accuracyMeters,
+          batteryPercent: batteryPercent,
+          batteryCheckedAt: batteryPercent == null
+              ? null
+              : DateTime.now().toIso8601String(),
         );
       }).toList(),
       notifications: [
         NotificationItem(
           id: Formatters.uniqueId('n'),
           title: '${device.name} 테스트 완료',
-          body: '${device.bleCode} 센서와 정상적으로 통신했습니다.',
+          body: '${device.bleCode} 센서의 실제 BLE 신호를 확인했습니다.',
           timeLabel: '방금 전',
           type: NotificationType.info,
           isRead: false,
@@ -459,6 +481,9 @@ class AppController extends ChangeNotifier {
     required int reward,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) async {
     final loginId = _requireActiveLoginId();
     await _repository.createLostItem(
@@ -468,6 +493,9 @@ class AppController extends ChangeNotifier {
       reward: reward,
       description: description,
       photoAssetPath: photoAssetPath,
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
     );
     await _refreshRemoteState(loginId: loginId);
   }
@@ -477,6 +505,9 @@ class AppController extends ChangeNotifier {
     required String location,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) async {
     final loginId = _requireActiveLoginId();
     await _repository.createFoundItem(
@@ -485,6 +516,9 @@ class AppController extends ChangeNotifier {
       location: location,
       description: description,
       photoAssetPath: photoAssetPath,
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
     );
     await _refreshRemoteState(loginId: loginId);
   }
@@ -539,6 +573,35 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  Future<void> refreshRewardStatus() async {
+    final loginId = _requireActiveLoginId();
+    final rewardStatus = await _repository.loadRewardStatus(loginId: loginId);
+    _state = _state.copyWith(rewardStatus: rewardStatus);
+    notifyListeners();
+  }
+
+  Future<int> claimRewardQuest(String questCode) async {
+    final loginId = _requireActiveLoginId();
+    final beforePoints = _state.rewardStatus.currentPoints;
+    final rewardStatus = await _repository.claimRewardQuest(
+      loginId: loginId,
+      questCode: questCode,
+    );
+    _state = _state.copyWith(rewardStatus: rewardStatus);
+    notifyListeners();
+    return rewardStatus.currentPoints - beforePoints;
+  }
+
+  Future<void> purchaseRewardShopItem(String itemId) async {
+    final loginId = _requireActiveLoginId();
+    final rewardStatus = await _repository.purchaseRewardShopItem(
+      loginId: loginId,
+      itemId: itemId,
+    );
+    _state = _state.copyWith(rewardStatus: rewardStatus);
+    notifyListeners();
+  }
+
   Future<void> saveSafeZone(SafeZone zone) async {
     final loginId = _requireActiveLoginId();
     await _repository.saveSafeZone(loginId: loginId, zone: zone);
@@ -568,16 +631,17 @@ class AppController extends ChangeNotifier {
       // 원격 동기화가 늦어도 채팅창은 바로 열리도록 로컬 상태를 유지한다.
     }
 
-    final hasVisibleThread = _state.chatThreads.any((thread) => thread.id == threadId);
+    final hasVisibleThread = _state.chatThreads.any(
+      (thread) => thread.id == threadId,
+    );
     if (!hasVisibleThread && item.isNotEmpty) {
       final lostItem = item.first;
-      final existingThreads = _state.chatThreads.where((thread) => thread.id != threadId).toList();
+      final existingThreads = _state.chatThreads
+          .where((thread) => thread.id != threadId)
+          .toList();
       _state = _state.copyWith(
         chatThreads: [
-          _optimisticThreadForItem(
-            threadId: threadId,
-            item: lostItem,
-          ),
+          _optimisticThreadForItem(threadId: threadId, item: lostItem),
           ...existingThreads,
         ],
         currentTab: AppTab.chat,
@@ -679,7 +743,9 @@ class AppController extends ChangeNotifier {
     final thread = _state.chatThreads
         .where((item) => item.id == threadId)
         .toList();
-    final targetTitle = thread.isEmpty ? '채팅방' : '${thread.first.itemTitle} 채팅방';
+    final targetTitle = thread.isEmpty
+        ? '채팅방'
+        : '${thread.first.itemTitle} 채팅방';
     _state = _state.copyWith(
       reports: [
         ReportRecord(

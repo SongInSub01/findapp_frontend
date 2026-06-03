@@ -1,6 +1,10 @@
 import 'package:my_flutter_starter/data/models/app_models.dart';
 
 abstract final class AppStateJsonMapper {
+  static RewardStatus rewardStatusFromJson(Map<String, dynamic>? json) {
+    return _rewardStatusFromJson(json);
+  }
+
   static AppState fromBootstrapJson(Map<String, dynamic> json) {
     return AppState(
       currentTab: AppTab.main,
@@ -60,6 +64,9 @@ abstract final class AppStateJsonMapper {
       inquiries: ((json['inquiries'] as List<dynamic>?) ?? const [])
           .map((item) => _inquiryFromJson(item as Map<String, dynamic>))
           .toList(),
+      rewardStatus: _rewardStatusFromJson(
+        json['rewardStatus'] as Map<String, dynamic>?,
+      ),
       availableCategories:
           ((json['availableCategories'] as List<dynamic>?) ?? const [])
               .map((item) => item.toString())
@@ -111,6 +118,8 @@ abstract final class AppStateJsonMapper {
           : _toDouble(json['lastDetectedAccuracyMeters']),
       focusedScanUntil: json['focusedScanUntil'] as String?,
       rediscoveredAt: json['rediscoveredAt'] as String?,
+      batteryPercent: _toInt(json['batteryPercent']),
+      batteryCheckedAt: json['batteryCheckedAt'] as String?,
     );
   }
 
@@ -132,6 +141,13 @@ abstract final class AppStateJsonMapper {
       threadId: json['threadId'] as String?,
       photoAssetPath:
           json['photoAssetPath'] as String? ?? json['imageUrl'] as String?,
+      latitude: json['latitude'] == null ? null : _toDouble(json['latitude']),
+      longitude: json['longitude'] == null
+          ? null
+          : _toDouble(json['longitude']),
+      accuracyMeters: json['accuracyMeters'] == null
+          ? null
+          : _toDouble(json['accuracyMeters']),
     );
   }
 
@@ -169,6 +185,10 @@ abstract final class AppStateJsonMapper {
       name: json['name'] as String? ?? '',
       address: json['address'] as String? ?? '',
       radiusMeters: _toInt(json['radiusMeters']) ?? 0,
+      latitude: json['latitude'] == null ? null : _toDouble(json['latitude']),
+      longitude: json['longitude'] == null
+          ? null
+          : _toDouble(json['longitude']),
     );
   }
 
@@ -256,6 +276,13 @@ abstract final class AppStateJsonMapper {
       ownerDisplayName: json['ownerDisplayName'] as String? ?? '',
       imageUrl: json['imageUrl'] as String?,
       reward: _toInt(json['reward']),
+      latitude: json['latitude'] == null ? null : _toDouble(json['latitude']),
+      longitude: json['longitude'] == null
+          ? null
+          : _toDouble(json['longitude']),
+      accuracyMeters: json['accuracyMeters'] == null
+          ? null
+          : _toDouble(json['accuracyMeters']),
       matchCount: _toInt(json['matchCount']) ?? 0,
       isMine: json['isMine'] as bool? ?? false,
     );
@@ -289,6 +316,64 @@ abstract final class AppStateJsonMapper {
       relatedItemId: json['relatedItemId'] as String?,
       createdAt: json['createdAt'] as String? ?? '',
       createdAtLabel: json['createdAtLabel'] as String? ?? '',
+    );
+  }
+
+  static RewardStatus _rewardStatusFromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return RewardStatus.empty();
+    }
+    return RewardStatus(
+      currentPoints: _toInt(json['currentPoints']) ?? 0,
+      lifetimePoints: _toInt(json['lifetimePoints']) ?? 0,
+      nextGoalPoints: _toInt(json['nextGoalPoints']) ?? 3500,
+      progress: _toDouble(json['progress']),
+      streakDays: _toInt(json['streakDays']) ?? 0,
+      quests: ((json['quests'] as List<dynamic>?) ?? const [])
+          .map((item) => _rewardQuestFromJson(item as Map<String, dynamic>))
+          .toList(),
+      shopItems: ((json['shopItems'] as List<dynamic>?) ?? const [])
+          .map((item) => _rewardShopItemFromJson(item as Map<String, dynamic>))
+          .toList(),
+      benefits: ((json['benefits'] as List<dynamic>?) ?? const [])
+          .map((item) => _rewardBenefitFromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  static RewardQuest _rewardQuestFromJson(Map<String, dynamic> json) {
+    return RewardQuest(
+      code: json['code'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      rewardMoney: _toInt(json['rewardMoney']) ?? 0,
+      rewardPoints: _toInt(json['rewardPoints']) ?? 0,
+      progressCurrent: _toInt(json['progressCurrent']) ?? 0,
+      progressTarget: _toInt(json['progressTarget']) ?? 1,
+      progressLabel: json['progressLabel'] as String? ?? '',
+      completed: json['completed'] as bool? ?? false,
+      claimed: json['claimed'] as bool? ?? false,
+      iconKey: json['iconKey'] as String? ?? 'gift',
+    );
+  }
+
+  static RewardShopItem _rewardShopItemFromJson(Map<String, dynamic> json) {
+    return RewardShopItem(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      pricePoints: _toInt(json['pricePoints']) ?? 0,
+      iconKey: json['iconKey'] as String? ?? 'gift',
+      purchased: json['purchased'] as bool? ?? false,
+    );
+  }
+
+  static RewardBenefit _rewardBenefitFromJson(Map<String, dynamic> json) {
+    return RewardBenefit(
+      tier: json['tier'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      requiredPoints: _toInt(json['requiredPoints']) ?? 0,
+      isCurrent: json['isCurrent'] as bool? ?? false,
     );
   }
 

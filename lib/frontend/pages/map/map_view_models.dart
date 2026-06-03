@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:my_flutter_starter/data/models/app_models.dart';
 
 import 'map_kakao_bridge.dart';
@@ -32,13 +34,26 @@ class MapMarkerViewData {
   final int zIndex;
 }
 
+class MapRadiusViewData {
+  const MapRadiusViewData({
+    required this.id,
+    required this.center,
+    required this.radiusMeters,
+  });
+
+  final String id;
+  final LatLng center;
+  final double radiusMeters;
+}
+
 abstract final class MapMarkerBuilder {
   static List<MapMarkerViewData> fromState(
     AppState state, {
     LatLng? anchorLatLng,
   }) {
-    final activeChatItemIds =
-        state.chatThreads.map((thread) => thread.itemId).toSet();
+    final activeChatItemIds = state.chatThreads
+        .map((thread) => thread.itemId)
+        .toSet();
     return <MapMarkerViewData>[
       ...state.myDevices.map(
         (device) => MapMarkerViewData(
@@ -46,7 +61,13 @@ abstract final class MapMarkerBuilder {
           name: device.name,
           subtitle: device.location,
           status: device.status,
-          latLng: _convertToLatLng(device.mapX, device.mapY, anchorLatLng),
+          latLng: _resolveLatLng(
+            latitude: device.lastDetectedLatitude,
+            longitude: device.lastDetectedLongitude,
+            mapX: device.mapX,
+            mapY: device.mapY,
+            anchorLatLng: anchorLatLng,
+          ),
           isMine: true,
           distanceValue: _distanceToNumber(device.distance),
         ),
@@ -60,7 +81,13 @@ abstract final class MapMarkerBuilder {
             item,
             hasActiveChat: activeChatItemIds.contains(item.id),
           ),
-          latLng: _convertToLatLng(item.mapX, item.mapY, anchorLatLng),
+          latLng: _resolveLatLng(
+            latitude: item.latitude,
+            longitude: item.longitude,
+            mapX: item.mapX,
+            mapY: item.mapY,
+            anchorLatLng: anchorLatLng,
+          ),
           isMine: false,
           distanceValue: _distanceToNumber(item.distance),
         ),
@@ -76,6 +103,19 @@ abstract final class MapMarkerBuilder {
     return LatLng(lat, lng);
   }
 
+  static LatLng _resolveLatLng({
+    required double? latitude,
+    required double? longitude,
+    required double mapX,
+    required double mapY,
+    required LatLng? anchorLatLng,
+  }) {
+    if (latitude != null && longitude != null) {
+      return LatLng(latitude, longitude);
+    }
+    return _convertToLatLng(mapX, mapY, anchorLatLng);
+  }
+
   static double _distanceToNumber(String? text) {
     if (text == null) {
       return 0;
@@ -88,10 +128,44 @@ abstract final class MapMarkerBuilder {
   }
 }
 
-ItemStatus resolveMapItemStatus(
-  LostItem item, {
-  required bool hasActiveChat,
-}) {
+abstract final class MapRadiusBuilder {
+  static List<MapRadiusViewData> fromState(AppState state) {
+    return state.myDevices
+        .where(
+          (device) =>
+              device.lastDetectedLatitude != null &&
+              device.lastDetectedLongitude != null,
+        )
+        .map(
+          (device) => MapRadiusViewData(
+            id: 'ble-radius-${device.id}',
+            center: LatLng(
+              device.lastDetectedLatitude!,
+              device.lastDetectedLongitude!,
+            ),
+            radiusMeters: _estimatedRadiusMeters(device),
+          ),
+        )
+        .toList();
+  }
+
+  static double _estimatedRadiusMeters(BleDevice device) {
+    final rssi = device.lastRssi;
+    final gpsAccuracy = device.lastDetectedAccuracyMeters ?? 0;
+    if (rssi == null) {
+      return math.max(gpsAccuracy, 15).clamp(3, 100).toDouble();
+    }
+
+    const measuredPower = -59;
+    const pathLossExponent = 2.5;
+    final signalDistance = math
+        .pow(10, (measuredPower - rssi) / (10 * pathLossExponent))
+        .toDouble();
+    return math.max(signalDistance, gpsAccuracy).clamp(3, 100).toDouble();
+  }
+}
+
+ItemStatus resolveMapItemStatus(LostItem item, {required bool hasActiveChat}) {
   if (hasActiveChat) {
     return ItemStatus.contact;
   }

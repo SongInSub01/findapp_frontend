@@ -50,11 +50,20 @@ class MapPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-/// 전주대학교 고정 위치
-    final currentLatLng = const LatLng(
-      35.8152,
-      127.0890,
-    );
+    final currentLatLng = currentLocation == null
+        ? null
+        : LatLng(currentLocation!.latitude, currentLocation!.longitude);
+    final bleRadiusCircles = MapRadiusBuilder.fromState(state)
+        .map(
+          (radius) => Circle(
+            circleId: radius.id,
+            center: radius.center,
+            radiusMeters: radius.radiusMeters,
+            strokeColor: const Color(0xFF2563EB),
+            fillColor: const Color(0xFF60A5FA),
+          ),
+        )
+        .toList();
     final markers = [
       ...MapMarkerBuilder.fromState(state, anchorLatLng: currentLatLng),
       if (currentLatLng != null)
@@ -162,7 +171,6 @@ class MapPageBody extends StatelessWidget {
                               onMapCreated: (controller) {
                                 handler.attachMapController(controller);
                               },
-
                               markers: visibleMarkers
                                   .map(
                                     (m) => Marker(
@@ -180,34 +188,18 @@ class MapPageBody extends StatelessWidget {
                                     ),
                                   )
                                   .toList(),
-
-                              onMapTap: (latLng) {
-                                debugPrint(
-                                  '지도 클릭: ${latLng.latitude}, ${latLng.longitude}',
-                                );
-                              },
-
-                              onMarkerTap: (
-                                markerId,
-                                latLng,
-                                zoomLevel,
-                              ) {
+                              circles: bleRadiusCircles,
+                              onMarkerTap: (markerId, latLng, zoomLevel) {
                                 if (markerId == 'current-location') {
                                   handler.focusCurrentLocation();
                                   return;
                                 }
-
                                 final tappedMarker = visibleMarkers
-                                    .where(
-                                      (marker) =>
-                                          marker.id == markerId,
-                                    )
+                                    .where((marker) => marker.id == markerId)
                                     .toList();
-
                                 if (tappedMarker.isEmpty) {
                                   return;
                                 }
-
                                 unawaited(
                                   handler.handleMarkerAction(
                                     tappedMarker.first,
@@ -215,7 +207,6 @@ class MapPageBody extends StatelessWidget {
                                 );
                               },
                             ),
-
                             Positioned.fill(
                               child: IgnorePointer(
                                 child: Container(
@@ -224,14 +215,10 @@ class MapPageBody extends StatelessWidget {
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
                                       colors: [
-                                        palette.mapWash.withValues(
-                                          alpha: 0.10,
-                                        ),
+                                        palette.mapWash.withValues(alpha: 0.10),
                                         Colors.transparent,
                                         palette.mapWash.withValues(
-                                          alpha: isDarkTheme
-                                              ? 0.18
-                                              : 0.08,
+                                          alpha: isDarkTheme ? 0.18 : 0.08,
                                         ),
                                       ],
                                     ),
@@ -1357,7 +1344,9 @@ MapMarkerViewData _lostItemMarkerData(LostItem item, LatLng? anchorLatLng) {
     name: item.title,
     subtitle: item.location,
     status: item.status,
-    latLng: _convertToLatLng(item.mapX, item.mapY, anchorLatLng),
+    latLng: item.latitude != null && item.longitude != null
+        ? LatLng(item.latitude!, item.longitude!)
+        : _convertToLatLng(item.mapX, item.mapY, anchorLatLng),
     isMine: false,
     distanceValue: _distanceValue(item.distance),
   );

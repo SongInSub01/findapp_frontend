@@ -4,6 +4,7 @@ import 'package:my_flutter_starter/app/state/app_controller.dart';
 import 'package:my_flutter_starter/core/utils/formatters.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
 import 'package:my_flutter_starter/frontend/common/panels/app_panel_helpers.dart';
+import 'package:my_flutter_starter/frontend/common/panels/ble_device_scan_panel.dart';
 import 'package:my_flutter_starter/frontend/common/panels/app_panel_scaffold.dart';
 import 'package:my_flutter_starter/frontend/common/resources/app_assets.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_text_styles.dart';
@@ -49,6 +50,7 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
   late String _selectedIconKey;
   late String _selectedPhotoAsset;
   bool _isSaving = false;
+  bool _isScanning = false;
 
   @override
   void initState() {
@@ -72,6 +74,25 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
     _locationController.dispose();
     _distanceController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showSaveError(Object error) async {
+    final message = error.toString().replaceFirst('Exception: ', '');
+    await showDialog<void>(
+      context: context,
+      useRootNavigator: true,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.info_outline_rounded),
+        title: Text(widget.device == null ? 'BLE 기기 등록 안내' : 'BLE 기기 수정 안내'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -102,6 +123,31 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
           AppTextField(controller: _nameController, label: '기기 이름'),
           const SizedBox(height: 12),
           AppTextField(controller: _codeController, label: 'BLE 코드'),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _isScanning
+                ? null
+                : () async {
+                    setState(() => _isScanning = true);
+                    try {
+                      final candidate = await showBleDeviceScanPanel(context);
+                      if (candidate == null || !mounted) {
+                        return;
+                      }
+                      _codeController.text = candidate.remoteId;
+                      if (_nameController.text.trim().isEmpty ||
+                          _nameController.text.trim() == '새 BLE 기기') {
+                        _nameController.text = candidate.displayName;
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() => _isScanning = false);
+                      }
+                    }
+                  },
+            icon: const Icon(Icons.bluetooth_searching_rounded),
+            label: Text(_isScanning ? '검색 중...' : '주변 기기 검색'),
+          ),
           const SizedBox(height: 12),
           AppTextField(controller: _locationController, label: '현재 위치 설명'),
           const SizedBox(height: 12),
@@ -193,13 +239,7 @@ class _BleEditorPanelState extends State<_BleEditorPanel> {
                       if (!context.mounted) {
                         return;
                       }
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            error.toString().replaceFirst('Exception: ', ''),
-                          ),
-                        ),
-                      );
+                      await _showSaveError(error);
                     } finally {
                       if (mounted) {
                         setState(() => _isSaving = false);

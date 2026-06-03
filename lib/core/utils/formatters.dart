@@ -16,7 +16,9 @@ abstract final class Formatters {
 
   static String nowTimeLabel() {
     final now = DateTime.now();
-    final hour = now.hour > 12 ? now.hour - 12 : (now.hour == 0 ? 12 : now.hour);
+    final hour = now.hour > 12
+        ? now.hour - 12
+        : (now.hour == 0 ? 12 : now.hour);
     final prefix = now.hour >= 12 ? '오후' : '오전';
     final minute = now.minute.toString().padLeft(2, '0');
     return '$prefix $hour:$minute';

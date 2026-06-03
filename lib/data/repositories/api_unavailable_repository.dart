@@ -71,6 +71,14 @@ class ApiUnavailableRepository implements AppRepository {
   }
 
   @override
+  Future<void> deleteBleDevice({
+    required String loginId,
+    required String deviceId,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 BLE 기기를 삭제할 수 없습니다.');
+  }
+
+  @override
   Future<void> createLostItem({
     required String loginId,
     required String title,
@@ -78,6 +86,9 @@ class ApiUnavailableRepository implements AppRepository {
     required int reward,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) {
     throw Exception('APP_API_BASE_URL이 설정되지 않아 분실물을 저장할 수 없습니다.');
   }
@@ -89,6 +100,9 @@ class ApiUnavailableRepository implements AppRepository {
     required String location,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) {
     throw Exception('APP_API_BASE_URL이 설정되지 않아 습득물을 저장할 수 없습니다.');
   }
@@ -129,9 +143,35 @@ class ApiUnavailableRepository implements AppRepository {
   }
 
   @override
+  Future<RewardStatus> loadRewardStatus({required String loginId}) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 리워드를 불러올 수 없습니다.');
+  }
+
+  @override
+  Future<RewardStatus> claimRewardQuest({
+    required String loginId,
+    required String questCode,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 리워드를 수령할 수 없습니다.');
+  }
+
+  @override
+  Future<RewardStatus> purchaseRewardShopItem({
+    required String loginId,
+    required String itemId,
+  }) {
+    throw Exception('APP_API_BASE_URL이 설정되지 않아 리워드 상품을 구매할 수 없습니다.');
+  }
+
+  @override
   Future<void> refreshBleSignal({
     required String loginId,
     required String deviceId,
+    int? rssi,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
+    int? batteryPercent,
   }) {
     throw Exception('APP_API_BASE_URL이 설정되지 않아 BLE 신호를 갱신할 수 없습니다.');
   }

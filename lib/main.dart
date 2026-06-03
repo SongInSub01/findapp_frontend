@@ -18,9 +18,6 @@ Future<void> main() async {
 
   await dotenv.load(fileName: ".env");
 
-  // ignore: avoid_print
-  print(dotenv.env['API_BASE_URL']);
-
   // 기존 앱 로직 실행
   final controller = await AppController.create();
   await controller.bootstrap();

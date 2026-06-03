@@ -1,5 +1,5 @@
 /// 탭 이름은 협업 시 바로 알아볼 수 있게 MAIN / MAP / CHAT / SETTING 기준으로 단순화한다.
-enum AppTab { main, map, chat, setting }
+enum AppTab { main, map, chat, setting, reward }
 
 enum ItemStatus { safe, lost, contact }
 
@@ -99,6 +99,8 @@ class BleDevice {
     this.lastDetectedAccuracyMeters,
     this.focusedScanUntil,
     this.rediscoveredAt,
+    this.batteryPercent,
+    this.batteryCheckedAt,
   });
 
   final String id;
@@ -121,6 +123,8 @@ class BleDevice {
   final double? lastDetectedAccuracyMeters;
   final String? focusedScanUntil;
   final String? rediscoveredAt;
+  final int? batteryPercent;
+  final String? batteryCheckedAt;
 
   BleDevice copyWith({
     String? id,
@@ -143,6 +147,8 @@ class BleDevice {
     double? lastDetectedAccuracyMeters,
     String? focusedScanUntil,
     String? rediscoveredAt,
+    int? batteryPercent,
+    String? batteryCheckedAt,
   }) {
     return BleDevice(
       id: id ?? this.id,
@@ -167,6 +173,8 @@ class BleDevice {
           lastDetectedAccuracyMeters ?? this.lastDetectedAccuracyMeters,
       focusedScanUntil: focusedScanUntil ?? this.focusedScanUntil,
       rediscoveredAt: rediscoveredAt ?? this.rediscoveredAt,
+      batteryPercent: batteryPercent ?? this.batteryPercent,
+      batteryCheckedAt: batteryCheckedAt ?? this.batteryCheckedAt,
     );
   }
 }
@@ -188,6 +196,9 @@ class LostItem {
     required this.mapY,
     this.threadId,
     this.photoAssetPath,
+    this.latitude,
+    this.longitude,
+    this.accuracyMeters,
   });
 
   final String id;
@@ -205,6 +216,9 @@ class LostItem {
   final double mapY;
   final String? threadId;
   final String? photoAssetPath;
+  final double? latitude;
+  final double? longitude;
+  final double? accuracyMeters;
 
   LostItem copyWith({
     String? id,
@@ -222,6 +236,9 @@ class LostItem {
     double? mapY,
     String? threadId,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) {
     return LostItem(
       id: id ?? this.id,
@@ -239,6 +256,9 @@ class LostItem {
       mapY: mapY ?? this.mapY,
       threadId: threadId ?? this.threadId,
       photoAssetPath: photoAssetPath ?? this.photoAssetPath,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      accuracyMeters: accuracyMeters ?? this.accuracyMeters,
     );
   }
 }
@@ -321,24 +341,32 @@ class SafeZone {
     required this.name,
     required this.address,
     required this.radiusMeters,
+    this.latitude,
+    this.longitude,
   });
 
   final String id;
   final String name;
   final String address;
   final int radiusMeters;
+  final double? latitude;
+  final double? longitude;
 
   SafeZone copyWith({
     String? id,
     String? name,
     String? address,
     int? radiusMeters,
+    double? latitude,
+    double? longitude,
   }) {
     return SafeZone(
       id: id ?? this.id,
       name: name ?? this.name,
       address: address ?? this.address,
       radiusMeters: radiusMeters ?? this.radiusMeters,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 }
@@ -487,6 +515,9 @@ class ListingSummary {
     required this.isMine,
     this.imageUrl,
     this.reward,
+    this.latitude,
+    this.longitude,
+    this.accuracyMeters,
   });
 
   final String id;
@@ -504,6 +535,9 @@ class ListingSummary {
   final String ownerDisplayName;
   final String? imageUrl;
   final int? reward;
+  final double? latitude;
+  final double? longitude;
+  final double? accuracyMeters;
   final int matchCount;
   final bool isMine;
 }
@@ -573,6 +607,101 @@ class DashboardSummary {
   }
 }
 
+class RewardQuest {
+  const RewardQuest({
+    required this.code,
+    required this.title,
+    required this.rewardMoney,
+    required this.rewardPoints,
+    required this.progressCurrent,
+    required this.progressTarget,
+    required this.progressLabel,
+    required this.completed,
+    required this.claimed,
+    required this.iconKey,
+  });
+
+  final String code;
+  final String title;
+  final int rewardMoney;
+  final int rewardPoints;
+  final int progressCurrent;
+  final int progressTarget;
+  final String progressLabel;
+  final bool completed;
+  final bool claimed;
+  final String iconKey;
+}
+
+class RewardShopItem {
+  const RewardShopItem({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.pricePoints,
+    required this.iconKey,
+    required this.purchased,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final int pricePoints;
+  final String iconKey;
+  final bool purchased;
+}
+
+class RewardBenefit {
+  const RewardBenefit({
+    required this.tier,
+    required this.title,
+    required this.description,
+    required this.requiredPoints,
+    required this.isCurrent,
+  });
+
+  final String tier;
+  final String title;
+  final String description;
+  final int requiredPoints;
+  final bool isCurrent;
+}
+
+class RewardStatus {
+  const RewardStatus({
+    required this.currentPoints,
+    required this.lifetimePoints,
+    required this.nextGoalPoints,
+    required this.progress,
+    required this.streakDays,
+    required this.quests,
+    required this.shopItems,
+    required this.benefits,
+  });
+
+  final int currentPoints;
+  final int lifetimePoints;
+  final int nextGoalPoints;
+  final double progress;
+  final int streakDays;
+  final List<RewardQuest> quests;
+  final List<RewardShopItem> shopItems;
+  final List<RewardBenefit> benefits;
+
+  factory RewardStatus.empty() {
+    return const RewardStatus(
+      currentPoints: 0,
+      lifetimePoints: 0,
+      nextGoalPoints: 3500,
+      progress: 0,
+      streakDays: 0,
+      quests: [],
+      shopItems: [],
+      benefits: [],
+    );
+  }
+}
+
 class AppState {
   const AppState({
     required this.currentTab,
@@ -593,6 +722,7 @@ class AppState {
     required this.recentFoundListings,
     required this.suggestedMatches,
     required this.inquiries,
+    required this.rewardStatus,
     required this.availableCategories,
     required this.availableColors,
     required this.searchResults,
@@ -616,6 +746,7 @@ class AppState {
   final List<ListingSummary> recentFoundListings;
   final List<MatchRecord> suggestedMatches;
   final List<InquiryRecord> inquiries;
+  final RewardStatus rewardStatus;
   final List<String> availableCategories;
   final List<String> availableColors;
   final List<ListingSummary> searchResults;
@@ -649,6 +780,7 @@ class AppState {
       recentFoundListings: const [],
       suggestedMatches: const [],
       inquiries: const [],
+      rewardStatus: RewardStatus.empty(),
       availableCategories: const [],
       availableColors: const [],
       searchResults: const [],
@@ -676,6 +808,7 @@ class AppState {
     List<ListingSummary>? recentFoundListings,
     List<MatchRecord>? suggestedMatches,
     List<InquiryRecord>? inquiries,
+    RewardStatus? rewardStatus,
     List<String>? availableCategories,
     List<String>? availableColors,
     List<ListingSummary>? searchResults,
@@ -703,6 +836,7 @@ class AppState {
       recentFoundListings: recentFoundListings ?? this.recentFoundListings,
       suggestedMatches: suggestedMatches ?? this.suggestedMatches,
       inquiries: inquiries ?? this.inquiries,
+      rewardStatus: rewardStatus ?? this.rewardStatus,
       availableCategories: availableCategories ?? this.availableCategories,
       availableColors: availableColors ?? this.availableColors,
       searchResults: searchResults ?? this.searchResults,

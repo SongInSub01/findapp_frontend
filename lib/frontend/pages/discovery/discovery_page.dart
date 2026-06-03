@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:my_flutter_starter/app/state/app_controller.dart';
 import 'package:my_flutter_starter/core/utils/formatters.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
+import 'package:my_flutter_starter/frontend/common/panels/found_item_editor_panel.dart';
 import 'package:my_flutter_starter/frontend/common/resources/app_assets.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_colors.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_text_styles.dart';
@@ -99,6 +100,11 @@ class _DiscoveryPageState extends State<DiscoveryPage> {
   }
 
   Future<void> _showFoundItemSheet(AppController controller) async {
+    await showFoundItemEditorPanel(context, controller: controller);
+  }
+
+  // ignore: unused_element
+  Future<void> _showLegacyFoundItemSheet(AppController controller) async {
     final titleController = TextEditingController();
     final locationController = TextEditingController();
     final descriptionController = TextEditingController();

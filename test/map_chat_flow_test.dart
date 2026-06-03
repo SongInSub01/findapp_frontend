@@ -126,6 +126,12 @@ class _MapChatFlowRepository implements AppRepository {
   }) async {}
 
   @override
+  Future<void> deleteBleDevice({
+    required String loginId,
+    required String deviceId,
+  }) async {}
+
+  @override
   Future<void> createLostItem({
     required String loginId,
     required String title,
@@ -133,6 +139,9 @@ class _MapChatFlowRepository implements AppRepository {
     required int reward,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) async {}
 
   @override
@@ -142,6 +151,9 @@ class _MapChatFlowRepository implements AppRepository {
     required String location,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) async {}
 
   @override
@@ -176,9 +188,35 @@ class _MapChatFlowRepository implements AppRepository {
   }) async {}
 
   @override
+  Future<RewardStatus> loadRewardStatus({required String loginId}) async {
+    return _state.rewardStatus;
+  }
+
+  @override
+  Future<RewardStatus> claimRewardQuest({
+    required String loginId,
+    required String questCode,
+  }) async {
+    return _state.rewardStatus;
+  }
+
+  @override
+  Future<RewardStatus> purchaseRewardShopItem({
+    required String loginId,
+    required String itemId,
+  }) async {
+    return _state.rewardStatus;
+  }
+
+  @override
   Future<void> refreshBleSignal({
     required String loginId,
     required String deviceId,
+    int? rssi,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
+    int? batteryPercent,
   }) async {}
 
   @override

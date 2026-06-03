@@ -39,6 +39,8 @@ class SettingPageBody extends StatelessWidget {
                     device: device,
                     onEdit: () => handler.openBleEditor(device: device),
                     onTest: () => handler.testBleDevice(device),
+                    onRing: () => handler.ringBleDevice(device),
+                    onDelete: () => handler.deleteBleDevice(device),
                   ),
                   const Divider(indent: 66),
                 ],
@@ -288,11 +290,15 @@ class _BleDeviceRow extends StatelessWidget {
     required this.device,
     required this.onEdit,
     required this.onTest,
+    required this.onRing,
+    required this.onDelete,
   });
 
   final BleDevice device;
   final VoidCallback onEdit;
   final Future<void> Function() onTest;
+  final Future<void> Function() onRing;
+  final Future<void> Function() onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -337,6 +343,12 @@ class _BleDeviceRow extends StatelessWidget {
                                   'BLE 코드: ${device.bleCode}',
                                   style: AppTextStyles.caption,
                                 ),
+                                Text(
+                                  device.batteryPercent == null
+                                      ? '배터리: 확인 필요'
+                                      : '배터리: ${device.batteryPercent}%',
+                                  style: AppTextStyles.caption,
+                                ),
                               ],
                             ),
                           ),
@@ -354,6 +366,20 @@ class _BleDeviceRow extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
+                          IconButton(
+                            tooltip: '태그 소리 울리기',
+                            onPressed: () {
+                              unawaited(onRing());
+                            },
+                            icon: const Icon(Icons.volume_up_outlined),
+                          ),
+                          IconButton(
+                            tooltip: 'BLE 기기 삭제',
+                            onPressed: () {
+                              unawaited(onDelete());
+                            },
+                            icon: const Icon(Icons.delete_outline_rounded),
+                          ),
                           const Icon(Icons.chevron_right_rounded),
                         ],
                       ),
@@ -389,6 +415,12 @@ class _BleDeviceRow extends StatelessWidget {
                               'BLE 코드: ${device.bleCode}',
                               style: AppTextStyles.caption,
                             ),
+                            Text(
+                              device.batteryPercent == null
+                                  ? '배터리: 확인 필요'
+                                  : '배터리: ${device.batteryPercent}%',
+                              style: AppTextStyles.caption,
+                            ),
                           ],
                         ),
                       ),
@@ -397,6 +429,20 @@ class _BleDeviceRow extends StatelessWidget {
                           unawaited(onTest());
                         },
                         child: const Text('테스트'),
+                      ),
+                      IconButton(
+                        tooltip: '태그 소리 울리기',
+                        onPressed: () {
+                          unawaited(onRing());
+                        },
+                        icon: const Icon(Icons.volume_up_outlined),
+                      ),
+                      IconButton(
+                        tooltip: 'BLE 기기 삭제',
+                        onPressed: () {
+                          unawaited(onDelete());
+                        },
+                        icon: const Icon(Icons.delete_outline_rounded),
                       ),
                       const SizedBox(width: 4),
                       const Icon(Icons.chevron_right_rounded),
@@ -470,10 +516,7 @@ class _DangerSection extends StatelessWidget {
                   color: AppColors.redBg,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.logout_rounded,
-                  color: AppColors.red,
-                ),
+                child: const Icon(Icons.logout_rounded, color: AppColors.red),
               ),
               const SizedBox(width: 12),
               Expanded(

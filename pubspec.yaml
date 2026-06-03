@@ -31,8 +31,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  dio: ^5.4.0
-
   #카카오맵 키
   kakao_map_plugin: ^0.4.0
 
@@ -48,6 +46,8 @@ dependencies:
   kakao_flutter_sdk_common: ^1.10.0
   geolocator: ^13.0.1
   flutter_dotenv: ^6.0.1
+  flutter_blue_plus: ^1.32.8
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:

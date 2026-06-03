@@ -2,82 +2,72 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:my_flutter_starter/app/state/app_controller.dart';
-import 'package:my_flutter_starter/data/models/app_models.dart';
-import 'package:my_flutter_starter/frontend/common/panels/app_panel_scaffold.dart';
+import 'package:my_flutter_starter/frontend/common/resources/app_assets.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_colors.dart';
 import 'package:my_flutter_starter/frontend/common/theme/app_text_styles.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/app_buttons.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/app_text_field.dart';
 
-Future<void> showSafeZoneEditorPanel(
+Future<void> showFoundItemEditorPanel(
   BuildContext context, {
   required AppController controller,
-  SafeZone? zone,
 }) async {
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) =>
-        _SafeZoneEditorPanel(controller: controller, zone: zone),
+    builder: (context) => _FoundItemEditorPanel(controller: controller),
   );
 }
 
-class _SafeZoneEditorPanel extends StatefulWidget {
-  const _SafeZoneEditorPanel({required this.controller, this.zone});
+class _FoundItemEditorPanel extends StatefulWidget {
+  const _FoundItemEditorPanel({required this.controller});
 
   final AppController controller;
-  final SafeZone? zone;
 
   @override
-  State<_SafeZoneEditorPanel> createState() => _SafeZoneEditorPanelState();
+  State<_FoundItemEditorPanel> createState() => _FoundItemEditorPanelState();
 }
 
-class _SafeZoneEditorPanelState extends State<_SafeZoneEditorPanel> {
-  late final TextEditingController _nameController;
-  late final TextEditingController _addressController;
-  late final TextEditingController _radiusController;
+class _FoundItemEditorPanelState extends State<_FoundItemEditorPanel> {
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   bool _isSaving = false;
   bool _isResolvingLocation = false;
   double? _latitude;
   double? _longitude;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.zone?.name ?? '');
-    _addressController = TextEditingController(
-      text: widget.zone?.address ?? '',
-    );
-    _radiusController = TextEditingController(
-      text: widget.zone?.radiusMeters.toString() ?? '50',
-    );
-    _latitude = widget.zone?.latitude;
-    _longitude = widget.zone?.longitude;
-  }
+  double? _accuracyMeters;
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _addressController.dispose();
-    _radiusController.dispose();
+    _titleController.dispose();
+    _locationController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppPanelScaffold(
-      title: widget.zone == null ? '안전지대 추가' : '안전지대 수정',
-      subtitle: 'BLE 거리 알림을 끌 위치와 반경을 저장합니다.',
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        8,
+        20,
+        MediaQuery.viewInsetsOf(context).bottom + 20,
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppTextField(controller: _nameController, label: '구역 이름'),
+          const Text('습득물 등록', style: AppTextStyles.title),
           const SizedBox(height: 12),
-          AppTextField(controller: _addressController, label: '주소'),
-          const SizedBox(height: 12),
+          AppTextField(controller: _titleController, label: '습득물 이름'),
+          const SizedBox(height: 10),
+          AppTextField(controller: _locationController, label: '습득 위치'),
+          const SizedBox(height: 10),
           AppSecondaryButton(
-            label: _latitude == null ? '현재 위치 사용' : '좌표 적용됨',
+            label: _latitude == null ? '현재 위치 사용' : '현재 위치 적용됨',
             icon: Icons.my_location_outlined,
             expanded: true,
             onPressed: _isResolvingLocation ? null : _captureCurrentLocation,
@@ -92,15 +82,11 @@ class _SafeZoneEditorPanelState extends State<_SafeZoneEditorPanel> {
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          AppTextField(
-            controller: _radiusController,
-            label: '반경 (m)',
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 10),
+          AppTextField(controller: _descriptionController, label: '특징'),
+          const SizedBox(height: 16),
           AppPrimaryButton(
-            label: _isSaving ? '저장 중...' : '저장',
+            label: _isSaving ? '등록 중...' : '등록',
             expanded: true,
             onPressed: _isSaving ? null : _save,
           ),
@@ -129,8 +115,9 @@ class _SafeZoneEditorPanelState extends State<_SafeZoneEditorPanel> {
       setState(() {
         _latitude = position.latitude;
         _longitude = position.longitude;
-        if (_addressController.text.trim().isEmpty) {
-          _addressController.text = '현재 위치';
+        _accuracyMeters = position.accuracy;
+        if (_locationController.text.trim().isEmpty) {
+          _locationController.text = '현재 위치';
         }
       });
     } catch (error) {
@@ -150,26 +137,25 @@ class _SafeZoneEditorPanelState extends State<_SafeZoneEditorPanel> {
   }
 
   Future<void> _save() async {
-    final radius =
-        int.tryParse(_radiusController.text.trim()) ??
-        widget.zone?.radiusMeters ??
-        50;
+    final title = _titleController.text.trim();
+    final location = _locationController.text.trim();
+    if (title.isEmpty || location.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이름과 위치를 입력해 주세요.')));
+      return;
+    }
 
     setState(() => _isSaving = true);
     try {
-      await widget.controller.saveSafeZone(
-        SafeZone(
-          id: widget.zone?.id ?? '',
-          name: _nameController.text.trim().isEmpty
-              ? (widget.zone?.name ?? '새 안전지대')
-              : _nameController.text.trim(),
-          address: _addressController.text.trim().isEmpty
-              ? (widget.zone?.address ?? '주소 미입력')
-              : _addressController.text.trim(),
-          radiusMeters: radius,
-          latitude: _latitude,
-          longitude: _longitude,
-        ),
+      await widget.controller.saveFoundItem(
+        title: title,
+        location: location,
+        description: _descriptionController.text.trim(),
+        photoAssetPath: AppAssets.icon,
+        latitude: _latitude,
+        longitude: _longitude,
+        accuracyMeters: _accuracyMeters,
       );
       if (!mounted) {
         return;
