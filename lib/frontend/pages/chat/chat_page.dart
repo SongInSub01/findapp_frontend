@@ -74,7 +74,14 @@ class _ChatBody extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final thread = state.chatThreads[index];
                       final linkedItem = state.lostItems.where((item) => item.id == thread.itemId);
-                      final assetPath = linkedItem.isEmpty ? null : linkedItem.first.photoAssetPath;
+                      final linkedLostItem = linkedItem.isEmpty ? null : linkedItem.first;
+                      final assetPath = linkedLostItem?.photoAssetPath;
+                      final isMyItem = linkedLostItem?.isMine ?? false;
+                      final isClosed = thread.itemStatus == ItemStatus.safe
+                          || (linkedLostItem?.isResolved ?? false);
+                      final previewText = isClosed
+                          ? '물건을 찾아 채팅이 종료되었습니다.'
+                          : thread.lastMessage;
                       return InkWell(
                         onTap: () => Navigator.of(context).pushNamed(
                           AppRoutes.chatDetail,
@@ -87,7 +94,9 @@ class _ChatBody extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               SecurePhotoThumbnail(
-                                photoStatus: thread.photoStatus,
+                                photoStatus: isMyItem
+                                    ? PhotoAccessStatus.approved
+                                    : thread.photoStatus,
                                 assetPath: assetPath,
                                 size: 62,
                               ),
@@ -112,8 +121,18 @@ class _ChatBody extends StatelessWidget {
                                     const SizedBox(height: 6),
                                     Row(
                                       children: [
-                                        StatusBadge(status: thread.itemStatus, small: true),
-                                        if (thread.reward != null) ...[
+                                        if (isClosed)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF3F4F6),
+                                              borderRadius: BorderRadius.circular(999),
+                                            ),
+                                            child: Text('종료', style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                                          )
+                                        else
+                                          StatusBadge(status: thread.itemStatus, small: true),
+                                        if (thread.reward != null && !isClosed) ...[
                                           const SizedBox(width: 8),
                                           Text(
                                             '사례금 ${Formatters.money(thread.reward!)}',
@@ -130,10 +149,13 @@ class _ChatBody extends StatelessWidget {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            thread.lastMessage,
+                                            previewText,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: AppTextStyles.bodySecondary,
+                                            style: AppTextStyles.bodySecondary.copyWith(
+                                              color: isClosed ? AppColors.textTertiary : null,
+                                              fontStyle: isClosed ? FontStyle.italic : FontStyle.normal,
+                                            ),
                                           ),
                                         ),
                                         if (thread.unread > 0)

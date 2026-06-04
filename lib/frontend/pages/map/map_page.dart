@@ -10,6 +10,7 @@ import 'map_kakao_bridge.dart';
 import 'map_page_body.dart';
 import 'map_page_handler.dart';
 import 'map_view_models.dart';
+import 'package:my_flutter_starter/core/ble/ble_proximity_scanner.dart';
 
 class MapPage extends StatefulWidget {
 
@@ -27,6 +28,7 @@ class MapPage extends StatefulWidget {
 
 class _MapPageState
     extends State<MapPage> {
+  DetectedLostItem? _detectedItem;
 
   MapFilter _filter =
       MapFilter.all;
@@ -69,6 +71,7 @@ class _MapPageState
       _primeLocationIfNeeded(
         requestPermission: true,
       );
+      _startProximityScan();
     });
   }
 
@@ -95,8 +98,35 @@ class _MapPageState
 
     _sheetExtentDebounce
         ?.cancel();
+    BleProximityScanner.instance.stopScanning();
 
     super.dispose();
+  }
+
+  void _startProximityScan() {
+    final controller = AppScope.controllerOf(context);
+    final state = controller.state;
+    // status == lost이고 bleCode가 있는 남의 분실물만 스캔 대상
+    final wanted = state.lostItems
+        .where((item) =>
+            !item.isMine &&
+            item.status == ItemStatus.lost &&
+            item.bleCode != null &&
+            item.bleCode!.isNotEmpty)
+        .map((item) => (
+              lostItemId: item.id,
+              title: item.title,
+              bleCode: item.bleCode!,
+            ))
+        .toList();
+
+    BleProximityScanner.instance.addListener(_onDetected);
+    BleProximityScanner.instance.startScanning(wantedItems: wanted);
+  }
+
+  void _onDetected(DetectedLostItem item) {
+    if (!mounted) return;
+    setState(() => _detectedItem = item);
   }
 
   @override
@@ -222,6 +252,9 @@ class _MapPageState
               true,
         );
       },
+      detectedItem: _detectedItem,
+      onDetectedItemDismissed: () =>
+          setState(() => _detectedItem = null),
     );
   }
 

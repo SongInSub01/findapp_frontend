@@ -155,14 +155,24 @@ class MainPageBody extends StatelessWidget {
                   return Column(
                     children: [
                       for (final item in visibleItems)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: LostItemCard(
-                            item: item,
-                            onTap: () => handler.openLostItemDetail(item),
-                            onMessage: () => handler.openChatForLostItem(item),
-                          ),
-                        ),
+                        Builder(builder: (context) {
+                          // 내 물건이 아닐 때는 채팅방의 실제 승인 상태를 우선 사용한다.
+                          // lost_items.photo_status는 전역값이라 채팅방별 상태와 다를 수 있다.
+                          final thread = state.chatThreads
+                              .where((t) => t.itemId == item.id)
+                              .fold<ChatThread?>(null, (prev, t) => t);
+                          final effectiveItem = (thread != null && !item.isMine)
+                              ? item.copyWith(photoStatus: thread.photoStatus)
+                              : item;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: LostItemCard(
+                              item: effectiveItem,
+                              onTap: () => handler.openLostItemDetail(item),
+                              onMessage: () => handler.openChatForLostItem(item),
+                            ),
+                          );
+                        }),
                     ],
                   );
                 },

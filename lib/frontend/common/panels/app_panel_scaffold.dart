@@ -8,12 +8,14 @@ class AppPanelScaffold extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.child,
+    this.trailing,
     super.key,
   });
 
   final String title;
   final String subtitle;
   final Widget child;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -64,28 +66,35 @@ class AppPanelScaffold extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               // 제목 영역
-              Container(
-                width: double.infinity,
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Column(
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: AppTextStyles.title.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.text,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: AppTextStyles.title.copyWith(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.text,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.4,
-                      ),
-                    ),
+                    if (trailing != null) trailing!,
                   ],
                 ),
               ),

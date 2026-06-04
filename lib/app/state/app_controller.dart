@@ -73,7 +73,8 @@ class AppController extends ChangeNotifier {
       _state = latestState;
       notifyListeners();
     } catch (_) {
-      await _resetAuthenticationState();
+      // 네트워크 오류 등 일시적 실패는 로그아웃하지 않고 무시한다.
+      // 인증 문제(latestState == null)일 때만 로그아웃 처리한다.
     }
   }
 
@@ -124,6 +125,7 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 지도 진입 시 현재 GPS를 저장하고 화면 상태를 갱신한다.
   Future<void> saveCurrentLocation({
     required double latitude,
     required double longitude,
@@ -179,6 +181,7 @@ class AppController extends ChangeNotifier {
     return loginId;
   }
 
+  /// 저장/수정 이후 백엔드 최신 상태를 다시 받아 화면을 맞춘다.
   Future<void> _refreshRemoteState({
     String? loginId,
     bool preserveLocalChatThreads = false,
@@ -217,9 +220,7 @@ class AppController extends ChangeNotifier {
       _state = latestState;
     }
     if (preserveLocalReports && preservedReports.isNotEmpty) {
-      final remoteReportKeys = latestState.reports
-          .map(_reportKey)
-          .toSet();
+      final remoteReportKeys = latestState.reports.map(_reportKey).toSet();
       final localReportsByKey = {
         for (final report in preservedReports) _reportKey(report): report,
       };
@@ -351,6 +352,33 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 알림 단건 삭제 - 로컬 즉시 반영 후 서버 동기화
+  Future<void> deleteNotification(String notificationId) async {
+    _state = _state.copyWith(
+      notifications: _state.notifications
+          .where((item) => item.id != notificationId)
+          .toList(),
+    );
+    notifyListeners();
+    try {
+      final loginId = _requireActiveLoginId();
+      await _repository.deleteNotification(
+        loginId: loginId,
+        notificationId: notificationId,
+      );
+    } catch (_) {}
+  }
+
+  /// 알림 전체 삭제
+  Future<void> clearAllNotifications() async {
+    _state = _state.copyWith(notifications: []);
+    notifyListeners();
+    try {
+      final loginId = _requireActiveLoginId();
+      await _repository.clearAllNotifications(loginId: loginId);
+    } catch (_) {}
+  }
+
   void refreshNearbyItems() {
     final random = Random();
     _state = _state.copyWith(
@@ -395,6 +423,7 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: updatedUser.loginId);
   }
 
+  /// BLE 기기 등록과 수정을 같은 흐름으로 처리한다.
   Future<void> saveBleDevice(BleDevice device) async {
     final loginId = _requireActiveLoginId();
     final index = _state.myDevices.indexWhere((item) => item.id == device.id);
@@ -406,16 +435,28 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  /// BLE 기기를 삭제한 뒤 서버 상태로 목록을 다시 맞춘다.
+  Future<void> deleteBleDevice(String deviceId) async {
+    final loginId = _requireActiveLoginId();
+    await _repository.deleteBleDevice(loginId: loginId, deviceId: deviceId);
+    await _refreshRemoteState(loginId: loginId);
+  }
+
   Future<void> markChatThreadRead(String threadId) async {
     final loginId = _requireActiveLoginId();
     await _repository.markChatThreadRead(loginId: loginId, threadId: threadId);
-    await _refreshRemoteState(
-      loginId: loginId,
-      preserveLocalChatThreads: true,
-    );
+    await _refreshRemoteState(loginId: loginId, preserveLocalChatThreads: true);
   }
 
-  Future<void> testBleDevice(String deviceId) async {
+  /// 실제 BLE 스캔 결과를 서버에 보내고 로컬 화면도 즉시 갱신한다.
+  Future<void> testBleDevice(
+    String deviceId, {
+    int? rssi,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
+    int? batteryPercent,
+  }) async {
     final deviceIndex = _state.myDevices.indexWhere(
       (item) => item.id == deviceId,
     );
@@ -424,8 +465,14 @@ class AppController extends ChangeNotifier {
     }
     final device = _state.myDevices[deviceIndex];
     final loginId = _requireActiveLoginId();
-    unawaited(
-      _repository.refreshBleSignal(loginId: loginId, deviceId: deviceId),
+    await _repository.refreshBleSignal(
+      loginId: loginId,
+      deviceId: deviceId,
+      rssi: rssi,
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
+      batteryPercent: batteryPercent,
     );
     _state = _state.copyWith(
       myDevices: _state.myDevices.map((item) {
@@ -436,13 +483,21 @@ class AppController extends ChangeNotifier {
           status: ItemStatus.safe,
           lastSeen: '방금 전',
           lastSignalAt: DateTime.now().toIso8601String(),
+          lastRssi: rssi,
+          lastDetectedLatitude: latitude,
+          lastDetectedLongitude: longitude,
+          lastDetectedAccuracyMeters: accuracyMeters,
+          batteryPercent: batteryPercent,
+          batteryCheckedAt: batteryPercent == null
+              ? null
+              : DateTime.now().toIso8601String(),
         );
       }).toList(),
       notifications: [
         NotificationItem(
           id: Formatters.uniqueId('n'),
           title: '${device.name} 테스트 완료',
-          body: '${device.bleCode} 센서와 정상적으로 통신했습니다.',
+          body: '${device.bleCode} 센서의 실제 BLE 신호를 확인했습니다.',
           timeLabel: '방금 전',
           type: NotificationType.info,
           isRead: false,
@@ -453,97 +508,83 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 분실물 등록(신규) 또는 수정(itemId 제공 시)을 처리하고 목록을 새로고침한다.
   Future<void> saveLostItem({
+    String? itemId,
     required String title,
     required String location,
     required int reward,
     required String description,
-    String? detailLocation,
     DateTime? happenedAt,
+    String? photoAssetPath,
     double? latitude,
     double? longitude,
-    String? photoAssetPath,
+    double? accuracyMeters,
   }) async {
     final loginId = _requireActiveLoginId();
-    await _repository.createLostItem(
-      loginId: loginId,
-      title: title,
-      location: location,
-      reward: reward,
-      description: description,
-      detailLocation: detailLocation,
-      happenedAt: happenedAt,
-      latitude: latitude,
-      longitude: longitude,
-      photoAssetPath: photoAssetPath,
-    );
+    if (itemId != null && itemId.isNotEmpty) {
+      await _repository.updateLostItem(
+        loginId: loginId,
+        itemId: itemId,
+        title: title,
+        location: location,
+        reward: reward,
+        description: description,
+        happenedAt: happenedAt,
+        photoAssetPath: photoAssetPath,
+      );
+    } else {
+      await _repository.createLostItem(
+        loginId: loginId,
+        title: title,
+        location: location,
+        reward: reward,
+        description: description,
+        happenedAt: happenedAt,
+        photoAssetPath: photoAssetPath,
+        latitude: latitude,
+        longitude: longitude,
+        accuracyMeters: accuracyMeters,
+      );
+    }
     await _refreshRemoteState(loginId: loginId);
   }
 
-  Future<void> updateLostItem({
-    required String itemId,
-    required String title,
-    required String location,
-    required int reward,
-    required String description,
-    String? detailLocation,
-    DateTime? happenedAt,
-    String? photoAssetPath,
-  }) async {
-    final loginId = _requireActiveLoginId();
-    await _repository.updateLostItem(
-      loginId: loginId,
-      itemId: itemId,
-      title: title,
-      location: location,
-      reward: reward,
-      description: description,
-      detailLocation: detailLocation,
-      happenedAt: happenedAt,
-      photoAssetPath: photoAssetPath,
-    );
-    await _refreshRemoteState(loginId: loginId);
-  }
-
-  Future<void> deleteLostItem({required String itemId}) async {
-    final loginId = _requireActiveLoginId();
-    // 낙관적 업데이트: 즉시 목록에서 제거
-    _state = _state.copyWith(
-      lostItems: _state.lostItems.where((i) => i.id != itemId).toList(),
-    );
-    notifyListeners();
-    await _repository.deleteLostItem(loginId: loginId, itemId: itemId);
-    await _refreshRemoteState(loginId: loginId);
-  }
-
+  /// 내 분실물을 '찾음(resolved)' 상태로 처리한다.
   Future<void> markLostItemFound({required LostItem item}) async {
     final loginId = _requireActiveLoginId();
-    // 낙관적 업데이트: 즉시 resolved로 변경
-    _state = _state.copyWith(
-      lostItems: _state.lostItems.map((i) {
-        if (i.id == item.id) {
-          return i.copyWith(listingStatus: ListingWorkflowStatus.resolved);
-        }
-        return i;
-      }).toList(),
-    );
-    notifyListeners();
-    await _repository.markLostItemFound(
+    await _repository.updateLostItem(
       loginId: loginId,
       itemId: item.id,
       title: item.title,
       location: item.location,
       reward: item.reward,
-      description: item.description.isEmpty ? '찾음 처리됨' : item.description,
+      description: item.description,
+      happenedAt: item.happenedAt != null
+          ? DateTime.tryParse(item.happenedAt!)
+          : null,
+      photoAssetPath: item.photoAssetPath,
+      listingStatus: 'resolved',
     );
     await _refreshRemoteState(loginId: loginId);
   }
 
+  /// 내 분실물 게시글을 삭제한다.
+  Future<void> deleteLostItem({required String itemId}) async {
+    final loginId = _requireActiveLoginId();
+    await _repository.deleteLostItem(loginId: loginId, itemId: itemId);
+    await _refreshRemoteState(loginId: loginId);
+  }
+
+  /// 습득물 등록 데이터를 백엔드에 저장하고 목록을 새로고침한다.
   Future<void> saveFoundItem({
     required String title,
     required String location,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) async {
     final loginId = _requireActiveLoginId();
     await _repository.createFoundItem(
@@ -552,6 +593,9 @@ class AppController extends ChangeNotifier {
       location: location,
       description: description,
       photoAssetPath: photoAssetPath,
+      latitude: latitude,
+      longitude: longitude,
+      accuracyMeters: accuracyMeters,
     );
     await _refreshRemoteState(loginId: loginId);
   }
@@ -606,6 +650,36 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  /// 리워드 화면의 최신 포인트/퀘스트 상태를 가져온다.
+  Future<void> refreshRewardStatus() async {
+    final loginId = _requireActiveLoginId();
+    final rewardStatus = await _repository.loadRewardStatus(loginId: loginId);
+    _state = _state.copyWith(rewardStatus: rewardStatus);
+    notifyListeners();
+  }
+
+  Future<int> claimRewardQuest(String questCode) async {
+    final loginId = _requireActiveLoginId();
+    final beforePoints = _state.rewardStatus.currentPoints;
+    final rewardStatus = await _repository.claimRewardQuest(
+      loginId: loginId,
+      questCode: questCode,
+    );
+    _state = _state.copyWith(rewardStatus: rewardStatus);
+    notifyListeners();
+    return rewardStatus.currentPoints - beforePoints;
+  }
+
+  Future<void> purchaseRewardShopItem(String itemId) async {
+    final loginId = _requireActiveLoginId();
+    final rewardStatus = await _repository.purchaseRewardShopItem(
+      loginId: loginId,
+      itemId: itemId,
+    );
+    _state = _state.copyWith(rewardStatus: rewardStatus);
+    notifyListeners();
+  }
+
   Future<void> saveSafeZone(SafeZone zone) async {
     final loginId = _requireActiveLoginId();
     await _repository.saveSafeZone(loginId: loginId, zone: zone);
@@ -618,6 +692,7 @@ class AppController extends ChangeNotifier {
     await _refreshRemoteState(loginId: loginId);
   }
 
+  /// 분실물 카드에서 채팅방을 열고 필요하면 로컬 임시 스레드를 만든다.
   Future<String> openOrCreateChatForItem(String itemId) async {
     final loginId = _requireActiveLoginId();
     final item = _state.lostItems.where((entry) => entry.id == itemId).toList();
@@ -635,16 +710,17 @@ class AppController extends ChangeNotifier {
       // 원격 동기화가 늦어도 채팅창은 바로 열리도록 로컬 상태를 유지한다.
     }
 
-    final hasVisibleThread = _state.chatThreads.any((thread) => thread.id == threadId);
+    final hasVisibleThread = _state.chatThreads.any(
+      (thread) => thread.id == threadId,
+    );
     if (!hasVisibleThread && item.isNotEmpty) {
       final lostItem = item.first;
-      final existingThreads = _state.chatThreads.where((thread) => thread.id != threadId).toList();
+      final existingThreads = _state.chatThreads
+          .where((thread) => thread.id != threadId)
+          .toList();
       _state = _state.copyWith(
         chatThreads: [
-          _optimisticThreadForItem(
-            threadId: threadId,
-            item: lostItem,
-          ),
+          _optimisticThreadForItem(threadId: threadId, item: lostItem),
           ...existingThreads,
         ],
         currentTab: AppTab.chat,
@@ -670,8 +746,7 @@ class AppController extends ChangeNotifier {
       lastMessage: '안녕하세요. ${item.title} 관련해서 메시지를 보냈습니다.',
       lastTime: '방금 전',
       unread: 0,
-      // 내 물건이 아닌 경우 사진은 항상 잠금 상태로 시작
-      photoStatus: item.isMine ? item.photoStatus : PhotoAccessStatus.locked,
+      photoStatus: item.photoStatus,
       otherUser: item.ownerName,
       reward: item.reward,
       messages: [
@@ -747,7 +822,9 @@ class AppController extends ChangeNotifier {
     final thread = _state.chatThreads
         .where((item) => item.id == threadId)
         .toList();
-    final targetTitle = thread.isEmpty ? '채팅방' : '${thread.first.itemTitle} 채팅방';
+    final targetTitle = thread.isEmpty
+        ? '채팅방'
+        : '${thread.first.itemTitle} 채팅방';
     _state = _state.copyWith(
       reports: [
         ReportRecord(

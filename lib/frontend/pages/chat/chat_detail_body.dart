@@ -126,7 +126,10 @@ class ChatDetailBody extends StatelessWidget {
               child: Row(
                 children: [
                   SecurePhotoThumbnail(
-                    photoStatus: thread.photoStatus,
+                    // 내 물건 채팅방이면 주인인 나는 항상 사진을 볼 수 있다.
+                    photoStatus: (item?.isMine ?? false)
+                        ? PhotoAccessStatus.approved
+                        : thread.photoStatus,
                     assetPath: thread.photoAssetPath ?? item?.photoAssetPath,
                     size: 64,
                   ),
@@ -148,7 +151,13 @@ class ChatDetailBody extends StatelessWidget {
                         ],
                         const SizedBox(height: 6),
                         Text(
-                          thread.photoStatus == PhotoAccessStatus.approved
+                          (item?.isMine ?? false)
+                              ? thread.photoStatus == PhotoAccessStatus.pending
+                                  ? '상대방이 사진 열람을 요청했습니다.'
+                                  : thread.photoStatus == PhotoAccessStatus.approved
+                                  ? '사진 열람이 승인된 상태입니다.'
+                                  : '아직 사진 요청이 없습니다.'
+                              : thread.photoStatus == PhotoAccessStatus.approved
                               ? '사진은 지금 바로 확인할 수 있습니다.'
                               : thread.photoStatus == PhotoAccessStatus.pending
                               ? '사진 승인 대기 중입니다.'
@@ -163,34 +172,76 @@ class ChatDetailBody extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      if (thread.photoStatus == PhotoAccessStatus.locked)
-                        TextButton(
-                          onPressed: () => handler.requestPhoto(),
-                          child: const Text('사진 요청'),
-                        ),
-                      if (canApprove)
-                        TextButton(
-                          onPressed: () => handler.approvePhoto(),
-                          child: const Text('승인 상태 확인'),
-                        ),
-                      if (thread.photoStatus == PhotoAccessStatus.approved)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
+                      if (item?.isMine ?? false) ...[
+                        // 주인: pending이면 승인 버튼, approved이면 승인됨 표시, locked면 내 물건 배지
+                        if (thread.photoStatus == PhotoAccessStatus.pending)
+                          FilledButton.icon(
+                            onPressed: () => handler.approvePhoto(),
+                            icon: const Icon(Icons.check_circle_outline_rounded, size: 16),
+                            label: const Text('사진 승인하기'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                            ),
+                          )
+                        else if (thread.photoStatus == PhotoAccessStatus.approved)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.greenBg,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text('승인 완료',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.green,
+                                  fontWeight: FontWeight.w700,
+                                )),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text('내 물건',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700,
+                                )),
                           ),
-                          decoration: BoxDecoration(
-                            color: AppColors.greenBg,
-                            borderRadius: BorderRadius.circular(999),
+                      ] else ...[
+                        if (thread.photoStatus == PhotoAccessStatus.locked)
+                          TextButton(
+                            onPressed: () => handler.requestPhoto(),
+                            child: const Text('사진 요청'),
                           ),
-                          child: Text(
-                            '사진 승인됨',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.green,
-                              fontWeight: FontWeight.w700,
+                        if (canApprove)
+                          TextButton(
+                            onPressed: () => handler.requestPhoto(),
+                            child: const Text('승인 재요청'),
+                          ),
+                        if (thread.photoStatus == PhotoAccessStatus.approved)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.greenBg,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              '사진 승인됨',
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.green,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
+                      ],
                     ],
                   ),
                 ],

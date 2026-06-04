@@ -20,6 +20,7 @@ class ApiAppRepository implements AppRepository {
   @override
   AppState loadInitialState() => AppState.empty();
 
+  /// 앱 시작 시 bootstrap API로 화면에 필요한 전체 상태를 가져온다.
   @override
   Future<AppState?> loadLatestState({String? loginId}) async {
     if (_baseUrl.isEmpty || loginId == null || loginId.isEmpty) {
@@ -34,7 +35,7 @@ class ApiAppRepository implements AppRepository {
     final payload = _decodeMap(response);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(payload['message'] ?? '부트스트랩 데이터를 불러오지 못했습니다.');
+      throw Exception(_apiErrorMessage(payload, '부트스트랩 데이터를 불러오지 못했습니다.'));
     }
 
     return AppStateJsonMapper.fromBootstrapJson(payload);
@@ -96,6 +97,7 @@ class ApiAppRepository implements AppRepository {
     return _authUserFromJson(payload['user'] as Map<String, dynamic>);
   }
 
+  /// 휴대폰 GPS 좌표를 백엔드 current_locations에 저장한다.
   @override
   Future<CurrentLocation> upsertCurrentLocation({
     required String loginId,
@@ -142,6 +144,7 @@ class ApiAppRepository implements AppRepository {
     );
   }
 
+  /// 안전지대 이름, 반경, 좌표를 백엔드에 저장한다.
   @override
   Future<void> saveSafeZone({
     required String loginId,
@@ -151,17 +154,22 @@ class ApiAppRepository implements AppRepository {
         ? '/api/v1/safe-zones'
         : '/api/v1/safe-zones/${zone.id}';
     final method = zone.id.isEmpty ? _postJson : _patchJson;
-    await method(
-      path,
-      body: {
-        'loginId': loginId,
-        'name': zone.name,
-        'address': zone.address,
-        'radiusMeters': zone.radiusMeters,
-      },
-    );
+    final body = <String, dynamic>{
+      'loginId': loginId,
+      'name': zone.name,
+      'address': zone.address,
+      'radiusMeters': zone.radiusMeters,
+    };
+    if (zone.latitude != null) {
+      body['latitude'] = zone.latitude;
+    }
+    if (zone.longitude != null) {
+      body['longitude'] = zone.longitude;
+    }
+    await method(path, body: body);
   }
 
+  /// BLE 태그 등록/수정 값을 백엔드 devices API와 동기화한다.
   @override
   Future<void> saveBleDevice({
     required String loginId,
@@ -193,6 +201,19 @@ class ApiAppRepository implements AppRepository {
     await _patchJson('/api/v1/devices/${device.id}', body: body);
   }
 
+  /// 사용자가 등록한 BLE 태그를 백엔드에서도 삭제한다.
+  @override
+  Future<void> deleteBleDevice({
+    required String loginId,
+    required String deviceId,
+  }) async {
+    await _deleteJson(
+      '/api/v1/devices/$deviceId',
+      queryParameters: {'loginId': loginId},
+    );
+  }
+
+  /// 분실물 등록 시 위치 설명과 GPS 좌표를 함께 전송한다.
   @override
   Future<void> createLostItem({
     required String loginId,
@@ -200,19 +221,16 @@ class ApiAppRepository implements AppRepository {
     required String location,
     required int reward,
     required String description,
-    String? detailLocation,
     DateTime? happenedAt,
+    String? photoAssetPath,
     double? latitude,
     double? longitude,
-    String? photoAssetPath,
+    double? accuracyMeters,
   }) async {
     final trimmedDescription = description.trim();
     final resolvedDescription = trimmedDescription.isEmpty
         ? 'BLE 감지 후 등록된 분실물입니다.'
         : trimmedDescription;
-    final fullLocation = (detailLocation != null && detailLocation.trim().isNotEmpty)
-        ? '$location (${detailLocation.trim()})'
-        : location;
     final images = (photoAssetPath == null || photoAssetPath.isEmpty)
         ? const <Map<String, dynamic>>[]
         : [
@@ -224,27 +242,34 @@ class ApiAppRepository implements AppRepository {
             },
           ];
 
-    await _postJson(
-      '/api/v1/lost-items',
-      body: {
-        'loginId': loginId,
-        'title': title,
-        'category': '일반 물건',
-        'color': '확인 필요',
-        'location': fullLocation,
-        'happenedAt': (happenedAt ?? DateTime.now()).toIso8601String(),
-        'latitude': latitude,
-        'longitude': longitude,
-        'reward': reward,
-        'listingStatus': 'open',
-        'description': resolvedDescription,
-        'featureNotes': resolvedDescription,
-        'contactNote': '앱 채팅으로 연락해 주세요.',
-        'images': images,
-      },
-    );
+    final body = <String, dynamic>{
+      'loginId': loginId,
+      'title': title,
+      'category': '일반 물건',
+      'color': '확인 필요',
+      'location': location,
+      'happenedAt': (happenedAt ?? DateTime.now()).toIso8601String(),
+      'reward': reward,
+      'listingStatus': 'open',
+      'description': resolvedDescription,
+      'featureNotes': resolvedDescription,
+      'contactNote': '앱 채팅으로 연락해 주세요.',
+      'images': images,
+    };
+    if (latitude != null) {
+      body['latitude'] = latitude;
+    }
+    if (longitude != null) {
+      body['longitude'] = longitude;
+    }
+    if (accuracyMeters != null) {
+      body['accuracyMeters'] = accuracyMeters;
+    }
+
+    await _postJson('/api/v1/lost-items', body: body);
   }
 
+  /// 분실물 수정: itemId 기준으로 기존 게시글을 업데이트한다.
   @override
   Future<void> updateLostItem({
     required String loginId,
@@ -253,16 +278,14 @@ class ApiAppRepository implements AppRepository {
     required String location,
     required int reward,
     required String description,
-    String? detailLocation,
     DateTime? happenedAt,
     String? photoAssetPath,
+    String listingStatus = 'open',
   }) async {
-    final resolvedDescription = description.trim().isEmpty
+    final trimmedDescription = description.trim();
+    final resolvedDescription = trimmedDescription.isEmpty
         ? 'BLE 감지 후 등록된 분실물입니다.'
-        : description.trim();
-    final fullLocation = (detailLocation != null && detailLocation.trim().isNotEmpty)
-        ? '$location (${detailLocation.trim()})'
-        : location;
+        : trimmedDescription;
     final images = (photoAssetPath == null || photoAssetPath.isEmpty)
         ? const <Map<String, dynamic>>[]
         : [
@@ -281,10 +304,10 @@ class ApiAppRepository implements AppRepository {
         'title': title,
         'category': '일반 물건',
         'color': '확인 필요',
-        'location': fullLocation,
+        'location': location,
         'happenedAt': (happenedAt ?? DateTime.now()).toIso8601String(),
         'reward': reward,
-        'listingStatus': 'open',
+        'listingStatus': listingStatus,
         'description': resolvedDescription,
         'featureNotes': resolvedDescription,
         'contactNote': '앱 채팅으로 연락해 주세요.',
@@ -293,49 +316,19 @@ class ApiAppRepository implements AppRepository {
     );
   }
 
-  @override
-  Future<void> markLostItemFound({
-    required String loginId,
-    required String itemId,
-    required String title,
-    required String location,
-    required int reward,
-    required String description,
-  }) async {
-    await _patchJson(
-      '/api/v1/lost-items/$itemId',
-      body: {
-        'loginId': loginId,
-        'listingStatus': 'resolved',
-        'title': title,
-        'category': '일반 물건',
-        'color': '확인 필요',
-        'location': location,
-        'happenedAt': DateTime.now().toIso8601String(),
-        'reward': reward,
-        'description': description,
-        'featureNotes': description,
-        'contactNote': '찾음 처리됨',
-        'images': <Map<String, dynamic>>[],
-      },
-    );
-  }
-
+  /// 분실물 삭제: itemId 기준으로 게시글을 삭제한다.
   @override
   Future<void> deleteLostItem({
     required String loginId,
     required String itemId,
   }) async {
-    final baseUri = Uri.parse(_baseUrl);
-    final uri = baseUri.resolve('/api/v1/lost-items/$itemId').replace(
+    await _deleteJson(
+      '/api/v1/lost-items/$itemId',
       queryParameters: {'loginId': loginId},
     );
-    final response = await _client.delete(uri);
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception('분실물 삭제에 실패했습니다.');
-    }
   }
 
+  /// 습득물 등록 시 지도 표시용 좌표를 함께 전송한다.
   @override
   Future<void> createFoundItem({
     required String loginId,
@@ -343,6 +336,9 @@ class ApiAppRepository implements AppRepository {
     required String location,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) async {
     final trimmedDescription = description.trim();
     final resolvedDescription = trimmedDescription.isEmpty
@@ -359,23 +355,31 @@ class ApiAppRepository implements AppRepository {
             },
           ];
 
-    await _postJson(
-      '/api/v1/found-items',
-      body: {
-        'loginId': loginId,
-        'title': title,
-        'category': '일반 물건',
-        'color': '확인 필요',
-        'location': location,
-        'happenedAt': DateTime.now().toIso8601String(),
-        'listingStatus': 'open',
-        'description': resolvedDescription,
-        'featureNotes': resolvedDescription,
-        'storageNote': '습득자가 보관 중입니다.',
-        'contactNote': '앱 문의로 연락해 주세요.',
-        'images': images,
-      },
-    );
+    final body = <String, dynamic>{
+      'loginId': loginId,
+      'title': title,
+      'category': '일반 물건',
+      'color': '확인 필요',
+      'location': location,
+      'happenedAt': DateTime.now().toIso8601String(),
+      'listingStatus': 'open',
+      'description': resolvedDescription,
+      'featureNotes': resolvedDescription,
+      'storageNote': '습득자가 보관 중입니다.',
+      'contactNote': '앱 문의로 연락해 주세요.',
+      'images': images,
+    };
+    if (latitude != null) {
+      body['latitude'] = latitude;
+    }
+    if (longitude != null) {
+      body['longitude'] = longitude;
+    }
+    if (accuracyMeters != null) {
+      body['accuracyMeters'] = accuracyMeters;
+    }
+
+    await _postJson('/api/v1/found-items', body: body);
   }
 
   @override
@@ -402,7 +406,7 @@ class ApiAppRepository implements AppRepository {
     final response = await _client.get(uri);
     final payload = _decodeMap(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(payload['message'] ?? '검색에 실패했습니다.');
+      throw Exception(_apiErrorMessage(payload, '검색에 실패했습니다.'));
     }
     return ((payload['items'] as List<dynamic>?) ?? const [])
         .map((item) => _listingSummaryFromJson(item as Map<String, dynamic>))
@@ -418,7 +422,7 @@ class ApiAppRepository implements AppRepository {
     final response = await _client.get(uri);
     final payload = _decodeMap(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(payload['message'] ?? '매칭 목록을 불러오지 못했습니다.');
+      throw Exception(_apiErrorMessage(payload, '매칭 목록을 불러오지 못했습니다.'));
     }
     return ((payload['matches'] as List<dynamic>?) ?? const [])
         .map((item) => _matchFromJson(item as Map<String, dynamic>))
@@ -459,14 +463,73 @@ class ApiAppRepository implements AppRepository {
     );
   }
 
+  /// 리워드 탭에서 사용할 포인트, 퀘스트, 상점 상태를 가져온다.
+  @override
+  Future<RewardStatus> loadRewardStatus({required String loginId}) async {
+    final baseUri = Uri.parse(_baseUrl);
+    final uri = baseUri
+        .resolve('/api/v1/rewards')
+        .replace(queryParameters: {'loginId': loginId});
+    final response = await _client.get(uri);
+    final payload = _decodeMap(response);
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(_apiErrorMessage(payload, '리워드를 불러오지 못했습니다.'));
+    }
+    return AppStateJsonMapper.rewardStatusFromJson(
+      payload['rewardStatus'] as Map<String, dynamic>?,
+    );
+  }
+
+  @override
+  Future<RewardStatus> claimRewardQuest({
+    required String loginId,
+    required String questCode,
+  }) async {
+    final payload = await _postJson(
+      '/api/v1/rewards/quests/$questCode/claim',
+      body: {'loginId': loginId},
+    );
+    return AppStateJsonMapper.rewardStatusFromJson(
+      payload['rewardStatus'] as Map<String, dynamic>?,
+    );
+  }
+
+  @override
+  Future<RewardStatus> purchaseRewardShopItem({
+    required String loginId,
+    required String itemId,
+  }) async {
+    final payload = await _postJson(
+      '/api/v1/rewards/shop/$itemId/purchase',
+      body: {'loginId': loginId},
+    );
+    return AppStateJsonMapper.rewardStatusFromJson(
+      payload['rewardStatus'] as Map<String, dynamic>?,
+    );
+  }
+
+  /// BLE 테스트 결과의 RSSI, 위치, 배터리 값을 백엔드에 기록한다.
   @override
   Future<void> refreshBleSignal({
     required String loginId,
     required String deviceId,
+    int? rssi,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
+    int? batteryPercent,
   }) async {
     await _postJson(
       '/api/v1/devices/$deviceId/signal',
-      body: {'loginId': loginId, 'rssi': -58, 'focusMinutes': 5},
+      body: {
+        'loginId': loginId,
+        'rssi': ?rssi,
+        'latitude': ?latitude,
+        'longitude': ?longitude,
+        'accuracyMeters': ?accuracyMeters,
+        'batteryPercent': ?batteryPercent,
+        'focusMinutes': 5,
+      },
     );
   }
 
@@ -544,6 +607,25 @@ class ApiAppRepository implements AppRepository {
     );
   }
 
+  @override
+  Future<void> deleteNotification({
+    required String loginId,
+    required String notificationId,
+  }) async {
+    await _deleteJson(
+      '/api/v1/notifications/$notificationId',
+      queryParameters: {'loginId': loginId},
+    );
+  }
+
+  @override
+  Future<void> clearAllNotifications({required String loginId}) async {
+    await _deleteJson(
+      '/api/v1/notifications',
+      queryParameters: {'loginId': loginId},
+    );
+  }
+
   Future<Map<String, dynamic>> _postJson(
     String path, {
     required Map<String, dynamic> body,
@@ -558,7 +640,7 @@ class ApiAppRepository implements AppRepository {
     final payload = _decodeMap(response);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(payload['message'] ?? '요청 처리에 실패했습니다.');
+      throw Exception(_apiErrorMessage(payload, '요청 처리에 실패했습니다.'));
     }
 
     return payload;
@@ -578,7 +660,7 @@ class ApiAppRepository implements AppRepository {
     final payload = _decodeMap(response);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(payload['message'] ?? '요청 처리에 실패했습니다.');
+      throw Exception(_apiErrorMessage(payload, '요청 처리에 실패했습니다.'));
     }
 
     return payload;
@@ -598,7 +680,23 @@ class ApiAppRepository implements AppRepository {
     final payload = _decodeMap(response);
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(payload['message'] ?? '요청 처리에 실패했습니다.');
+      throw Exception(_apiErrorMessage(payload, '요청 처리에 실패했습니다.'));
+    }
+
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> _deleteJson(
+    String path, {
+    required Map<String, String> queryParameters,
+  }) async {
+    final baseUri = Uri.parse(_baseUrl);
+    final uri = baseUri.resolve(path).replace(queryParameters: queryParameters);
+    final response = await _client.delete(uri);
+    final payload = _decodeMap(response);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(_apiErrorMessage(payload, 'BLE 기기를 삭제하지 못했습니다.'));
     }
 
     return payload;
@@ -619,6 +717,52 @@ class ApiAppRepository implements AppRepository {
     return decoded;
   }
 
+  String _apiErrorMessage(Map<String, dynamic> payload, String fallback) {
+    final rawMessage = payload['message']?.toString().trim() ?? '';
+    if (rawMessage.isEmpty) {
+      return fallback;
+    }
+
+    final normalized = rawMessage.toLowerCase();
+    if (normalized.contains('ble_devices_user_ble_code_unique_idx') ||
+        normalized.contains('duplicate key') && normalized.contains('ble')) {
+      return '이미 등록된 BLE 기기입니다. 다른 기기를 선택해 주세요.';
+    }
+    if (normalized.contains('users_email_key')) {
+      return '이미 사용 중인 이메일입니다.';
+    }
+    if (normalized.contains('users_login_id')) {
+      return '이미 사용 중인 로그인 아이디입니다.';
+    }
+    if (normalized.contains('23505') ||
+        normalized.contains('unique constraint') ||
+        normalized.contains('duplicate key')) {
+      return '이미 등록된 정보입니다. 기존 내용을 확인해 주세요.';
+    }
+    if (normalized.contains('23503') ||
+        normalized.contains('foreign key constraint')) {
+      return '연결된 정보를 찾지 못했습니다. 삭제되었거나 사용할 수 없는 항목인지 확인해 주세요.';
+    }
+    if (normalized.contains('23514') ||
+        normalized.contains('check constraint')) {
+      return '입력한 값이 허용 범위를 벗어났습니다. 내용을 다시 확인해 주세요.';
+    }
+    if (normalized.contains('23502') ||
+        normalized.contains('not-null constraint') ||
+        normalized.contains('invalid_type') ||
+        normalized.contains('too_small')) {
+      return '필수 입력값이 빠졌거나 형식이 올바르지 않습니다. 내용을 다시 확인해 주세요.';
+    }
+    if (normalized.contains('no user found')) {
+      return '로그인 정보를 확인하지 못했습니다. 다시 로그인해 주세요.';
+    }
+    if (normalized.contains('failed to')) {
+      return fallback;
+    }
+
+    return rawMessage;
+  }
+
   AuthUser _authUserFromJson(Map<String, dynamic> json) {
     return AuthUser(
       id: json['id'] as String? ?? '',
@@ -631,11 +775,24 @@ class ApiAppRepository implements AppRepository {
 
   CurrentLocation _currentLocationFromJson(Map<String, dynamic> json) {
     return CurrentLocation(
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
-      accuracyMeters: (json['accuracyMeters'] as num?)?.toDouble(),
+      latitude: _optionalDouble(json['latitude']) ?? 0,
+      longitude: _optionalDouble(json['longitude']) ?? 0,
+      accuracyMeters: _optionalDouble(json['accuracyMeters']),
       updatedAt: json['updatedAt'] as String? ?? '',
     );
+  }
+
+  double? _optionalDouble(Object? value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
   }
 
   ListingSummary _listingSummaryFromJson(Map<String, dynamic> json) {
@@ -657,6 +814,9 @@ class ApiAppRepository implements AppRepository {
       ownerDisplayName: json['ownerDisplayName'] as String? ?? '',
       imageUrl: json['imageUrl'] as String?,
       reward: (json['reward'] as num?)?.toInt(),
+      latitude: _optionalDouble(json['latitude']),
+      longitude: _optionalDouble(json['longitude']),
+      accuracyMeters: _optionalDouble(json['accuracyMeters']),
       matchCount: (json['matchCount'] as num?)?.toInt() ?? 0,
       isMine: json['isMine'] as bool? ?? false,
     );

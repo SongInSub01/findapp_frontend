@@ -197,7 +197,9 @@ class _PhotoSection extends StatelessWidget {
       child: Column(
         children: [
           SecurePhotoThumbnail(
-            photoStatus: item.photoStatus,
+            photoStatus: item.isMine
+                ? PhotoAccessStatus.approved
+                : item.photoStatus,
             assetPath: item.photoAssetPath,
             size: 160,
           ),

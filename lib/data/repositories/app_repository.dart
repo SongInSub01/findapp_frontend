@@ -43,17 +43,22 @@ abstract interface class AppRepository {
     required bool isNew,
   });
 
+  Future<void> deleteBleDevice({
+    required String loginId,
+    required String deviceId,
+  });
+
   Future<void> createLostItem({
     required String loginId,
     required String title,
     required String location,
     required int reward,
     required String description,
-    String? detailLocation,
     DateTime? happenedAt,
+    String? photoAssetPath,
     double? latitude,
     double? longitude,
-    String? photoAssetPath,
+    double? accuracyMeters,
   });
 
   Future<void> updateLostItem({
@@ -63,23 +68,14 @@ abstract interface class AppRepository {
     required String location,
     required int reward,
     required String description,
-    String? detailLocation,
     DateTime? happenedAt,
     String? photoAssetPath,
+    String listingStatus = 'open',
   });
 
   Future<void> deleteLostItem({
     required String loginId,
     required String itemId,
-  });
-
-  Future<void> markLostItemFound({
-    required String loginId,
-    required String itemId,
-    required String title,
-    required String location,
-    required int reward,
-    required String description,
   });
 
   Future<void> createFoundItem({
@@ -88,6 +84,9 @@ abstract interface class AppRepository {
     required String location,
     required String description,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   });
 
   Future<List<ListingSummary>> searchListings({
@@ -113,9 +112,26 @@ abstract interface class AppRepository {
     required int reward,
   });
 
+  Future<RewardStatus> loadRewardStatus({required String loginId});
+
+  Future<RewardStatus> claimRewardQuest({
+    required String loginId,
+    required String questCode,
+  });
+
+  Future<RewardStatus> purchaseRewardShopItem({
+    required String loginId,
+    required String itemId,
+  });
+
   Future<void> refreshBleSignal({
     required String loginId,
     required String deviceId,
+    int? rssi,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
+    int? batteryPercent,
   });
 
   Future<String> openOrCreateChat({
@@ -149,4 +165,11 @@ abstract interface class AppRepository {
     required String threadId,
     required String reason,
   });
+
+  Future<void> deleteNotification({
+    required String loginId,
+    required String notificationId,
+  });
+
+  Future<void> clearAllNotifications({required String loginId});
 }

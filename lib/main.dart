@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kakao_map_plugin/kakao_map_plugin.dart';
 
 import 'app/state/app_controller.dart';
+import 'core/ble/ble_background_service.dart';
 import 'core/config/kakao_map_config.dart';
 import 'frontend/find_app.dart';
 import 'frontend/frontend_scope.dart';
@@ -17,6 +18,9 @@ Future<void> main() async {
   }
 
   await dotenv.load(fileName: ".env");
+
+  // 백그라운드 BLE 서비스 초기화
+  BleBackgroundService.instance.init();
 
   // ignore: avoid_print
   print(dotenv.env['API_BASE_URL']);

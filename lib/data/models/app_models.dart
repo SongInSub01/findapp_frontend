@@ -1,5 +1,5 @@
 /// 탭 이름은 협업 시 바로 알아볼 수 있게 MAIN / MAP / CHAT / SETTING 기준으로 단순화한다.
-enum AppTab { main, map, chat, setting }
+enum AppTab { main, map, chat, setting, reward }
 
 enum ItemStatus { safe, lost, contact }
 
@@ -77,6 +77,7 @@ class UserProfile {
   }
 }
 
+/// 백엔드 BLE 응답의 신호, 위치, 배터리 상태를 앱에서 쓰는 모델이다.
 class BleDevice {
   const BleDevice({
     required this.id,
@@ -99,6 +100,8 @@ class BleDevice {
     this.lastDetectedAccuracyMeters,
     this.focusedScanUntil,
     this.rediscoveredAt,
+    this.batteryPercent,
+    this.batteryCheckedAt,
   });
 
   final String id;
@@ -121,6 +124,8 @@ class BleDevice {
   final double? lastDetectedAccuracyMeters;
   final String? focusedScanUntil;
   final String? rediscoveredAt;
+  final int? batteryPercent;
+  final String? batteryCheckedAt;
 
   BleDevice copyWith({
     String? id,
@@ -143,6 +148,8 @@ class BleDevice {
     double? lastDetectedAccuracyMeters,
     String? focusedScanUntil,
     String? rediscoveredAt,
+    int? batteryPercent,
+    String? batteryCheckedAt,
   }) {
     return BleDevice(
       id: id ?? this.id,
@@ -167,10 +174,13 @@ class BleDevice {
           lastDetectedAccuracyMeters ?? this.lastDetectedAccuracyMeters,
       focusedScanUntil: focusedScanUntil ?? this.focusedScanUntil,
       rediscoveredAt: rediscoveredAt ?? this.rediscoveredAt,
+      batteryPercent: batteryPercent ?? this.batteryPercent,
+      batteryCheckedAt: batteryCheckedAt ?? this.batteryCheckedAt,
     );
   }
 }
 
+/// 분실물 카드와 지도 표시를 위해 위치 좌표까지 보관한다.
 class LostItem {
   const LostItem({
     required this.id,
@@ -182,18 +192,20 @@ class LostItem {
     required this.photoStatus,
     required this.distance,
     required this.ownerName,
-    required this.isMine,
     required this.description,
     required this.sourceDeviceId,
     required this.mapX,
     required this.mapY,
-    this.listingStatus = ListingWorkflowStatus.open,
+    this.isMine = false,
     this.happenedAt,
     this.createdAt,
-    this.latitude,
-    this.longitude,
+    this.bleCode,
+    this.listingStatus = 'open',
     this.threadId,
     this.photoAssetPath,
+    this.latitude,
+    this.longitude,
+    this.accuracyMeters,
   });
 
   final String id;
@@ -204,21 +216,25 @@ class LostItem {
   final ItemStatus status;
   final PhotoAccessStatus photoStatus;
   final String distance;
-  final bool isMine;
   final String ownerName;
   final String description;
   final String? sourceDeviceId;
   final double mapX;
   final double mapY;
-  final ListingWorkflowStatus listingStatus;
+  final bool isMine;
   final String? happenedAt;
   final String? createdAt;
-  final double? latitude;
-  final double? longitude;
+  final String? bleCode;
+  final String listingStatus;
   final String? threadId;
   final String? photoAssetPath;
+  final double? latitude;
+  final double? longitude;
+  final double? accuracyMeters;
 
-  bool get isResolved => listingStatus == ListingWorkflowStatus.resolved;
+  /// 분실물이 해결됐거나 보관 종료된 상태인지 확인한다.
+  bool get isResolved =>
+      listingStatus == 'resolved' || listingStatus == 'archived';
 
   LostItem copyWith({
     String? id,
@@ -230,18 +246,20 @@ class LostItem {
     PhotoAccessStatus? photoStatus,
     String? distance,
     String? ownerName,
-    bool? isMine,
     String? description,
     String? sourceDeviceId,
     double? mapX,
     double? mapY,
-    ListingWorkflowStatus? listingStatus,
+    bool? isMine,
     String? happenedAt,
     String? createdAt,
-    double? latitude,
-    double? longitude,
+    String? bleCode,
+    String? listingStatus,
     String? threadId,
     String? photoAssetPath,
+    double? latitude,
+    double? longitude,
+    double? accuracyMeters,
   }) {
     return LostItem(
       id: id ?? this.id,
@@ -253,18 +271,20 @@ class LostItem {
       photoStatus: photoStatus ?? this.photoStatus,
       distance: distance ?? this.distance,
       ownerName: ownerName ?? this.ownerName,
-      isMine: isMine ?? this.isMine,
       description: description ?? this.description,
       sourceDeviceId: sourceDeviceId ?? this.sourceDeviceId,
       mapX: mapX ?? this.mapX,
       mapY: mapY ?? this.mapY,
-      listingStatus: listingStatus ?? this.listingStatus,
+      isMine: isMine ?? this.isMine,
       happenedAt: happenedAt ?? this.happenedAt,
       createdAt: createdAt ?? this.createdAt,
-      latitude: latitude ?? this.latitude,
-      longitude: longitude ?? this.longitude,
+      bleCode: bleCode ?? this.bleCode,
+      listingStatus: listingStatus ?? this.listingStatus,
       threadId: threadId ?? this.threadId,
       photoAssetPath: photoAssetPath ?? this.photoAssetPath,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      accuracyMeters: accuracyMeters ?? this.accuracyMeters,
     );
   }
 }
@@ -345,30 +365,39 @@ class ChatThread {
   }
 }
 
+/// 안전지대 반경과 좌표를 함께 보관해 BLE 알림 예외 판단에 사용한다.
 class SafeZone {
   const SafeZone({
     required this.id,
     required this.name,
     required this.address,
     required this.radiusMeters,
+    this.latitude,
+    this.longitude,
   });
 
   final String id;
   final String name;
   final String address;
   final int radiusMeters;
+  final double? latitude;
+  final double? longitude;
 
   SafeZone copyWith({
     String? id,
     String? name,
     String? address,
     int? radiusMeters,
+    double? latitude,
+    double? longitude,
   }) {
     return SafeZone(
       id: id ?? this.id,
       name: name ?? this.name,
       address: address ?? this.address,
       radiusMeters: radiusMeters ?? this.radiusMeters,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 }
@@ -418,6 +447,7 @@ class AlertSettings {
   }
 }
 
+/// 휴대폰 GPS 위치를 백엔드와 동기화하기 위한 모델이다.
 class CurrentLocation {
   const CurrentLocation({
     required this.latitude,
@@ -498,6 +528,7 @@ class ReportRecord {
   final String statusLabel;
 }
 
+/// 검색/목록 화면에서 내 물건 여부와 좌표를 함께 표시하는 요약 모델이다.
 class ListingSummary {
   const ListingSummary({
     required this.id,
@@ -517,6 +548,9 @@ class ListingSummary {
     required this.isMine,
     this.imageUrl,
     this.reward,
+    this.latitude,
+    this.longitude,
+    this.accuracyMeters,
   });
 
   final String id;
@@ -534,6 +568,9 @@ class ListingSummary {
   final String ownerDisplayName;
   final String? imageUrl;
   final int? reward;
+  final double? latitude;
+  final double? longitude;
+  final double? accuracyMeters;
   final int matchCount;
   final bool isMine;
 }
@@ -603,6 +640,101 @@ class DashboardSummary {
   }
 }
 
+class RewardQuest {
+  const RewardQuest({
+    required this.code,
+    required this.title,
+    required this.rewardMoney,
+    required this.rewardPoints,
+    required this.progressCurrent,
+    required this.progressTarget,
+    required this.progressLabel,
+    required this.completed,
+    required this.claimed,
+    required this.iconKey,
+  });
+
+  final String code;
+  final String title;
+  final int rewardMoney;
+  final int rewardPoints;
+  final int progressCurrent;
+  final int progressTarget;
+  final String progressLabel;
+  final bool completed;
+  final bool claimed;
+  final String iconKey;
+}
+
+class RewardShopItem {
+  const RewardShopItem({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.pricePoints,
+    required this.iconKey,
+    required this.purchased,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final int pricePoints;
+  final String iconKey;
+  final bool purchased;
+}
+
+class RewardBenefit {
+  const RewardBenefit({
+    required this.tier,
+    required this.title,
+    required this.description,
+    required this.requiredPoints,
+    required this.isCurrent,
+  });
+
+  final String tier;
+  final String title;
+  final String description;
+  final int requiredPoints;
+  final bool isCurrent;
+}
+
+class RewardStatus {
+  const RewardStatus({
+    required this.currentPoints,
+    required this.lifetimePoints,
+    required this.nextGoalPoints,
+    required this.progress,
+    required this.streakDays,
+    required this.quests,
+    required this.shopItems,
+    required this.benefits,
+  });
+
+  final int currentPoints;
+  final int lifetimePoints;
+  final int nextGoalPoints;
+  final double progress;
+  final int streakDays;
+  final List<RewardQuest> quests;
+  final List<RewardShopItem> shopItems;
+  final List<RewardBenefit> benefits;
+
+  factory RewardStatus.empty() {
+    return const RewardStatus(
+      currentPoints: 0,
+      lifetimePoints: 0,
+      nextGoalPoints: 3500,
+      progress: 0,
+      streakDays: 0,
+      quests: [],
+      shopItems: [],
+      benefits: [],
+    );
+  }
+}
+
 class AppState {
   const AppState({
     required this.currentTab,
@@ -623,6 +755,7 @@ class AppState {
     required this.recentFoundListings,
     required this.suggestedMatches,
     required this.inquiries,
+    required this.rewardStatus,
     required this.availableCategories,
     required this.availableColors,
     required this.searchResults,
@@ -646,6 +779,7 @@ class AppState {
   final List<ListingSummary> recentFoundListings;
   final List<MatchRecord> suggestedMatches;
   final List<InquiryRecord> inquiries;
+  final RewardStatus rewardStatus;
   final List<String> availableCategories;
   final List<String> availableColors;
   final List<ListingSummary> searchResults;
@@ -679,6 +813,7 @@ class AppState {
       recentFoundListings: const [],
       suggestedMatches: const [],
       inquiries: const [],
+      rewardStatus: RewardStatus.empty(),
       availableCategories: const [],
       availableColors: const [],
       searchResults: const [],
@@ -706,6 +841,7 @@ class AppState {
     List<ListingSummary>? recentFoundListings,
     List<MatchRecord>? suggestedMatches,
     List<InquiryRecord>? inquiries,
+    RewardStatus? rewardStatus,
     List<String>? availableCategories,
     List<String>? availableColors,
     List<ListingSummary>? searchResults,
@@ -733,6 +869,7 @@ class AppState {
       recentFoundListings: recentFoundListings ?? this.recentFoundListings,
       suggestedMatches: suggestedMatches ?? this.suggestedMatches,
       inquiries: inquiries ?? this.inquiries,
+      rewardStatus: rewardStatus ?? this.rewardStatus,
       availableCategories: availableCategories ?? this.availableCategories,
       availableColors: availableColors ?? this.availableColors,
       searchResults: searchResults ?? this.searchResults,

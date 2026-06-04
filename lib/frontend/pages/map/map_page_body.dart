@@ -13,6 +13,8 @@ import 'package:my_flutter_starter/frontend/common/widgets/status_badge.dart';
 
 import 'map_kakao_bridge.dart';
 import 'map_page_handler.dart';
+import 'package:my_flutter_starter/core/ble/ble_proximity_scanner.dart';
+import 'package:my_flutter_starter/core/ble/ble_tag_service.dart';
 import 'map_platform_io.dart' if (dart.library.html) 'map_platform_web.dart';
 import 'map_view_models.dart';
 
@@ -31,6 +33,8 @@ class MapPageBody extends StatelessWidget {
     required this.layerMode,
     required this.onFilterChanged,
     required this.handler,
+    this.detectedItem,
+    this.onDetectedItemDismissed,
     super.key,
   });
 
@@ -47,6 +51,8 @@ class MapPageBody extends StatelessWidget {
   final MapLayerMode layerMode;
   final ValueChanged<MapFilter> onFilterChanged;
   final MapPageHandler handler;
+  final DetectedLostItem? detectedItem;
+  final VoidCallback? onDetectedItemDismissed;
 
   @override
   Widget build(BuildContext context) {
@@ -154,6 +160,11 @@ class MapPageBody extends StatelessWidget {
 
             return Stack(
               children: [
+                if (detectedItem != null)
+                  _DetectedItemBanner(
+                    detectedItem: detectedItem!,
+                    onDismiss: onDetectedItemDismissed,
+                  ),
                 Positioned.fill(
                   child: supportsMapSurface
                       ? Stack(
@@ -280,6 +291,7 @@ class MapPageBody extends StatelessWidget {
                           scrollController: scrollController,
                           items: visibleLostItems,
                           activeChatItemIds: activeChatItemIds,
+                          chatThreads: state.chatThreads,
                           currentLocation: currentLocation,
                           locationHint: locationHint,
                           isFetchingLocation: isFetchingLocation,
@@ -723,6 +735,7 @@ class _NearbySheet extends StatelessWidget {
     required this.scrollController,
     required this.items,
     required this.activeChatItemIds,
+    required this.chatThreads,
     required this.currentLocation,
     required this.locationHint,
     required this.isFetchingLocation,
@@ -737,6 +750,7 @@ class _NearbySheet extends StatelessWidget {
   final ScrollController scrollController;
   final List<LostItem> items;
   final Set<String> activeChatItemIds;
+  final List<ChatThread> chatThreads;
   final CurrentLocation? currentLocation;
   final String? locationHint;
   final bool isFetchingLocation;
@@ -880,6 +894,7 @@ class _NearbySheet extends StatelessWidget {
                       palette: palette,
                       item: item,
                       activeChatItemIds: activeChatItemIds,
+                      chatThreads: chatThreads,
                       anchorLatLng: anchorLatLng,
                       onTap: () =>
                           onTapItem(_lostItemMarkerData(item, anchorLatLng)),
@@ -1033,6 +1048,7 @@ class _NearbyItemCard extends StatelessWidget {
     required this.palette,
     required this.item,
     required this.activeChatItemIds,
+    required this.chatThreads,
     required this.anchorLatLng,
     required this.onTap,
   });
@@ -1040,6 +1056,7 @@ class _NearbyItemCard extends StatelessWidget {
   final _MapThemePalette palette;
   final LostItem item;
   final Set<String> activeChatItemIds;
+  final List<ChatThread> chatThreads;
   final LatLng? anchorLatLng;
   final VoidCallback onTap;
 
@@ -1050,25 +1067,31 @@ class _NearbyItemCard extends StatelessWidget {
       item,
       hasActiveChat: hasActiveChat,
     );
+    // 채팅방이 있을 때 해당 thread의 photoStatus를 사용한다 (thread별 실제 승인 상태).
+    // lost_items.photo_status는 전역값이라 다른 사용자의 승인이 반영될 수 있다.
+    final myThread = chatThreads.where((t) => t.itemId == item.id).fold<ChatThread?>(null, (_, t) => t);
+    final effectivePhotoStatus = item.isMine
+        ? PhotoAccessStatus.approved
+        : (myThread != null ? myThread.photoStatus : item.photoStatus);
     final actionLabel = hasActiveChat ? '채팅 보기' : '연락하기';
     final actionText = hasActiveChat
         ? '이미 시작된 채팅으로 바로 들어갑니다.'
         : '탭하면 채팅을 만들고 바로 연결합니다.';
     final photoNote = hasActiveChat
-        ? switch (item.photoStatus) {
+        ? switch (effectivePhotoStatus) {
             PhotoAccessStatus.approved =>
               '연락 중. 주인 허가 후 사진을 바로 확인할 수 있습니다.',
             PhotoAccessStatus.pending => '연락 중. 사진 승인 대기 상태입니다.',
             PhotoAccessStatus.locked => '연락 중. 사진은 잠금 상태입니다.',
           }
-        : switch (item.photoStatus) {
+        : switch (effectivePhotoStatus) {
             PhotoAccessStatus.approved =>
               '승인 완료. 주인 허가 후 사진을 확인할 수 있습니다.',
             PhotoAccessStatus.pending => '승인 대기 중. 주인 확인이 끝나면 사진이 열립니다.',
             PhotoAccessStatus.locked => '사진 잠금 상태. 먼저 주인에게 연락해 주세요.',
           };
-    final noteColor = palette.photoNoteForeground(item.photoStatus);
-    final noteBackground = palette.photoNoteBackground(item.photoStatus);
+    final noteColor = palette.photoNoteForeground(effectivePhotoStatus);
+    final noteBackground = palette.photoNoteBackground(effectivePhotoStatus);
 
     return InkWell(
       onTap: onTap,
@@ -1097,7 +1120,7 @@ class _NearbyItemCard extends StatelessWidget {
                   width: 88,
                   height: 88,
                   child: SecurePhotoThumbnail(
-                    photoStatus: item.photoStatus,
+                    photoStatus: effectivePhotoStatus,
                     assetPath: item.photoAssetPath,
                     size: 88,
                   ),
@@ -1121,7 +1144,21 @@ class _NearbyItemCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          StatusBadge(status: displayStatus, small: true),
+                          if (item.isMine)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Text('내 물건',
+                                  style: AppTextStyles.caption.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w700,
+                                  )),
+                            )
+                          else
+                            StatusBadge(status: displayStatus, small: true),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -1159,6 +1196,7 @@ class _NearbyItemCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (!item.isMine) ...[
             const SizedBox(height: 12),
             Container(
               width: double.infinity,
@@ -1171,9 +1209,9 @@ class _NearbyItemCard extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(
-                    item.photoStatus == PhotoAccessStatus.approved
+                    effectivePhotoStatus == PhotoAccessStatus.approved
                         ? Icons.verified_outlined
-                        : item.photoStatus == PhotoAccessStatus.pending
+                        : effectivePhotoStatus == PhotoAccessStatus.pending
                             ? Icons.hourglass_top_rounded
                             : Icons.lock_outline,
                     size: 16,
@@ -1228,6 +1266,7 @@ class _NearbyItemCard extends StatelessWidget {
                 ],
               ),
             ),
+            ],  // if (!item.isMine)
           ],
         ),
       ),
@@ -1385,4 +1424,143 @@ class _MapThemePalette {
       isDarkMode ? const Color(0xFF86EFAC) : AppColors.green;
   Color get warningText =>
       isDarkMode ? const Color(0xFFFBBF24) : AppColors.yellow;
+}
+
+// B사용자 주변 분실물 BLE 감지 배너 - 지도 위에 오버레이로 표시
+class _DetectedItemBanner extends StatefulWidget {
+  const _DetectedItemBanner({
+    required this.detectedItem,
+    this.onDismiss,
+  });
+
+  final DetectedLostItem detectedItem;
+  final VoidCallback? onDismiss;
+
+  @override
+  State<_DetectedItemBanner> createState() => _DetectedItemBannerState();
+}
+
+class _DetectedItemBannerState extends State<_DetectedItemBanner> {
+  bool _isRinging = false;
+
+  Future<void> _ring() async {
+    if (_isRinging) return;
+    setState(() => _isRinging = true);
+    try {
+      await BleTagService().ringRegisteredTag(widget.detectedItem.bleCode);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('BLE 태그에서 소리가 울리고 있습니다.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isRinging = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(16),
+            color: const Color(0xFF1D4ED8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.bluetooth_searching_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '근처에 분실물이 있습니다',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          widget.detectedItem.lostItemTitle,
+                          style: const TextStyle(
+                            color: Color(0xFFBFDBFE),
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // 소리 울리기 버튼
+                  TextButton.icon(
+                    onPressed: _isRinging ? null : _ring,
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF1D4ED8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: _isRinging
+                        ? const SizedBox.square(
+                            dimension: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Color(0xFF1D4ED8),
+                            ),
+                          )
+                        : const Icon(Icons.volume_up_rounded, size: 16),
+                    label: Text(
+                      _isRinging ? '울리는 중' : '소리 울리기',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // 닫기 버튼
+                  GestureDetector(
+                    onTap: widget.onDismiss,
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: Color(0xFFBFDBFE),
+                      size: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

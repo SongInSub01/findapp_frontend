@@ -13,38 +13,86 @@ Future<void> showNotificationPanel(
   required AppState state,
 }) async {
   controller.markNotificationsRead();
-  final updatedState = controller.state;
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (context) {
-      return AppPanelScaffold(
-        title: '알림 내역',
-        subtitle: 'BLE 경고, 사진 승인, 신고 처리 상태를 한 번에 확인합니다.',
-        child: updatedState.notifications.isEmpty
-            ? const PanelEmpty(
-                icon: Icons.notifications_none_rounded,
-                title: '도착한 알림이 없습니다',
-                subtitle: 'BLE 거리 경고나 사진 승인 요청이 생기면 여기에 쌓입니다.',
-              )
-            : Column(
-                children: [
-                  for (final item in updatedState.notifications) ...[
-                    PanelInfoCard(
-                      icon: notificationIcon(item.type),
-                      iconColor: notificationColor(item.type),
-                      title: item.title,
-                      body: item.body,
-                      trailing: item.timeLabel,
-                    ),
-                    const SizedBox(height: 10),
-                  ],
-                ],
-              ),
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx, setState) {
+          final notifications = controller.state.notifications;
+          return AppPanelScaffold(
+            title: '알림 내역',
+            subtitle: 'BLE 경고, 사진 승인, 신고 처리 상태를 한 번에 확인합니다.',
+            trailing: notifications.isEmpty
+                ? null
+                : TextButton(
+                    onPressed: () async {
+                      await controller.clearAllNotifications();
+                      setState(() {});
+                    },
+                    child: const Text('전체 삭제', style: TextStyle(color: AppColors.red)),
+                  ),
+            child: notifications.isEmpty
+                ? const PanelEmpty(
+                    icon: Icons.notifications_none_rounded,
+                    title: '도착한 알림이 없습니다',
+                    subtitle: 'BLE 거리 경고나 사진 승인 요청이 생기면 여기에 쌓입니다.',
+                  )
+                : Column(
+                    children: [
+                      for (final item in notifications) ...[
+                        _DismissibleNotificationCard(
+                          item: item,
+                          onDelete: () async {
+                            await controller.deleteNotification(item.id);
+                            setState(() {});
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                  ),
+          );
+        },
       );
     },
   );
+}
+
+class _DismissibleNotificationCard extends StatelessWidget {
+  const _DismissibleNotificationCard({
+    required this.item,
+    required this.onDelete,
+  });
+
+  final NotificationItem item;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: Key(item.id),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => onDelete(),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppColors.red.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(Icons.delete_outline_rounded, color: AppColors.red),
+      ),
+      child: PanelInfoCard(
+        icon: notificationIcon(item.type),
+        iconColor: notificationColor(item.type),
+        title: item.title,
+        body: item.body,
+        trailing: item.timeLabel,
+      ),
+    );
+  }
 }
 
 Future<void> showReportPanel(

@@ -43,6 +43,11 @@ class _LostItemEditorPageState extends State<LostItemEditorPage> {
   double? _longitude;
   late DateTime _happenedAt;
 
+  // 사례금 선택 상태
+  static const _rewardPresets = [0, 5000, 10000, 30000, 50000, 100000];
+  int? _selectedRewardPreset;   // null = 기타
+  bool _rewardDropdownOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -51,8 +56,10 @@ class _LostItemEditorPageState extends State<LostItemEditorPage> {
     _detailLocationController = TextEditingController();
     _descriptionController =
         TextEditingController(text: item?.description ?? '');
+    final existingReward = item != null && item.reward > 0 ? item.reward : 0;
+    _selectedRewardPreset = _rewardPresets.contains(existingReward) ? existingReward : null;
     _rewardController = TextEditingController(
-      text: item != null && item.reward > 0 ? '${item.reward}' : '',
+      text: (_selectedRewardPreset == null && existingReward > 0) ? '$existingReward' : '',
     );
     _happenedAt = DateTime.now();
     _existingImageUrl = item?.photoAssetPath;
@@ -155,7 +162,7 @@ class _LostItemEditorPageState extends State<LostItemEditorPage> {
   Future<void> _submit() async {
     final title = _titleController.text.trim();
     final reward =
-        int.tryParse(_rewardController.text.replaceAll(',', '')) ?? 0;
+        _selectedRewardPreset ?? int.tryParse(_rewardController.text.replaceAll(',', '')) ?? 0;
 
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,13 +183,12 @@ class _LostItemEditorPageState extends State<LostItemEditorPage> {
           _pickedImageFile?.path ?? _existingImageUrl;
 
       if (widget.isEditMode) {
-        await widget.controller.updateLostItem(
+        await widget.controller.saveLostItem(
           itemId: widget.existingItem!.id,
           title: title,
           location: _selectedLocation,
           reward: reward,
           description: _descriptionController.text.trim(),
-          detailLocation: _detailLocationController.text.trim(),
           happenedAt: _happenedAt,
           photoAssetPath: finalImageUrl,
         );
@@ -192,7 +198,6 @@ class _LostItemEditorPageState extends State<LostItemEditorPage> {
           location: _selectedLocation,
           reward: reward,
           description: _descriptionController.text.trim(),
-          detailLocation: _detailLocationController.text.trim(),
           happenedAt: _happenedAt,
           latitude: _latitude,
           longitude: _longitude,
@@ -456,11 +461,17 @@ class _LostItemEditorPageState extends State<LostItemEditorPage> {
             ),
             const SizedBox(height: 16),
 
-            AppTextField(
-              controller: _rewardController,
-              label: '사례금 (선택)',
-              hintText: '예: 30000',
-              keyboardType: TextInputType.number,
+            _RewardSelector(
+              presets: _rewardPresets,
+              selectedPreset: _selectedRewardPreset,
+              isOpen: _rewardDropdownOpen,
+              customController: _rewardController,
+              onToggle: () => setState(() => _rewardDropdownOpen = !_rewardDropdownOpen),
+              onSelect: (value) => setState(() {
+                _selectedRewardPreset = value;
+                _rewardDropdownOpen = false;
+                if (value != null) _rewardController.clear();
+              }),
             ),
             const SizedBox(height: 28),
 
@@ -470,6 +481,220 @@ class _LostItemEditorPageState extends State<LostItemEditorPage> {
                   : (widget.isEditMode ? '수정하기' : '분실물 등록하기'),
               expanded: true,
               onPressed: _isSaving || _isUploading ? null : _submit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 사례금 선택 위젯: 탭하면 프리셋 목록이 펼쳐지고 "기타" 선택 시 직접 입력 필드 노출
+class _RewardSelector extends StatelessWidget {
+  const _RewardSelector({
+    required this.presets,
+    required this.selectedPreset,
+    required this.isOpen,
+    required this.customController,
+    required this.onToggle,
+    required this.onSelect,
+  });
+
+  final List<int> presets;
+  final int? selectedPreset;
+  final bool isOpen;
+  final TextEditingController customController;
+  final VoidCallback onToggle;
+  final ValueChanged<int?> onSelect;
+
+  String _label(int value) {
+    if (value == 0) return '0원 (사례금 없음)';
+    if (value >= 10000) return '${value ~/ 10000}만원';
+    return '${value ~/ 1000}천원';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isCustom = selectedPreset == null;
+    final displayText = isCustom
+        ? (customController.text.isEmpty ? '기타 (직접 입력)' : '기타: ${customController.text}원')
+        : _label(selectedPreset!);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 라벨
+        Text(
+          '사례금 (선택)',
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF111827),
+          ),
+        ),
+        const SizedBox(height: 8),
+        // 선택 버튼
+        GestureDetector(
+          onTap: onToggle,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F9FF),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isOpen
+                    ? const Color(0xFF2563EB)
+                    : const Color(0xFFD6E6FF),
+                width: isOpen ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.card_giftcard_rounded,
+                    size: 18, color: Color(0xFF2563EB)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    displayText,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: (isCustom && customController.text.isEmpty)
+                          ? const Color(0xFF9CA3AF)
+                          : const Color(0xFF111827),
+                    ),
+                  ),
+                ),
+                AnimatedRotation(
+                  turns: isOpen ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  child: const Icon(Icons.keyboard_arrow_down_rounded,
+                      color: Color(0xFF2563EB)),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // 펼쳐지는 목록
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          child: isOpen
+              ? Container(
+                  margin: const EdgeInsets.only(top: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFD6E6FF)),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x14000000),
+                        blurRadius: 12,
+                        offset: Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      for (final preset in presets)
+                        _RewardOption(
+                          label: _label(preset),
+                          isSelected: selectedPreset == preset,
+                          onTap: () => onSelect(preset),
+                        ),
+                      const Divider(height: 1),
+                      _RewardOption(
+                        label: '기타 (직접 입력)',
+                        isSelected: isCustom,
+                        onTap: () => onSelect(null),
+                        icon: Icons.edit_outlined,
+                      ),
+                    ],
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        // 기타 선택 시 직접 입력 필드
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+          child: isCustom
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: TextField(
+                    controller: customController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: '금액을 직접 입력하세요 (원)',
+                      filled: true,
+                      fillColor: const Color(0xFFF5F9FF),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFD6E6FF)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(color: Color(0xFFD6E6FF)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF2563EB), width: 1.5),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+}
+
+class _RewardOption extends StatelessWidget {
+  const _RewardOption({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+    this.icon,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFFEFF6FF)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon ?? (isSelected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded),
+              size: 18,
+              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF9CA3AF),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF111827),
+              ),
             ),
           ],
         ),

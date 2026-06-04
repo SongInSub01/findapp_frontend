@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:my_flutter_starter/app/state/app_controller.dart';
+import 'package:my_flutter_starter/core/ble/ble_tag_service.dart';
 import 'package:my_flutter_starter/data/models/app_models.dart';
 import 'package:my_flutter_starter/frontend/app_routes.dart';
 import 'package:my_flutter_starter/frontend/common/widgets/inline_feature_panels.dart';
@@ -27,19 +28,97 @@ class SettingPageHandler {
 
   Future<void> testBleDevice(BleDevice device) async {
     try {
-      await controller.testBleDevice(device.id);
+      final measurement = await BleTagService().measureRegisteredTag(
+        device.bleCode,
+      );
+      await controller.testBleDevice(
+        device.id,
+        rssi: measurement.rssi,
+        latitude: measurement.latitude,
+        longitude: measurement.longitude,
+        accuracyMeters: measurement.accuracyMeters,
+        batteryPercent: measurement.batteryPercent,
+      );
       if (!context.mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${device.name} BLE 테스트를 전송했습니다.')),
+        SnackBar(content: Text('${device.name}의 실제 BLE 신호를 저장했습니다.')),
       );
     } catch (error) {
       if (!context.mounted) {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+
+  Future<void> ringBleDevice(BleDevice device) async {
+    try {
+      await BleTagService().ringRegisteredTag(device.bleCode);
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${device.name}에서 찾기 소리를 울렸습니다.')));
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+
+  Future<void> deleteBleDevice(BleDevice device) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.delete_outline_rounded),
+        title: const Text('BLE 기기 삭제'),
+        content: Text(
+          '${device.name} 기기를 삭제할까요?\n삭제 후 같은 BLE 기기를 다시 등록할 수 있습니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('취소'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (shouldDelete != true || !context.mounted) {
+      return;
+    }
+
+    try {
+      await controller.deleteBleDevice(device.id);
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${device.name} 기기를 삭제했습니다.')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     }
   }
@@ -52,17 +131,15 @@ class SettingPageHandler {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     }
   }
 
   void openSafeZoneEditor({SafeZone? zone}) {
-    showSafeZoneEditorPanel(
-      context,
-      controller: controller,
-      zone: zone,
-    );
+    showSafeZoneEditorPanel(context, controller: controller, zone: zone);
   }
 
   void openProfileEditor() {
@@ -74,11 +151,7 @@ class SettingPageHandler {
   }
 
   void openNotifications() {
-    showNotificationPanel(
-      context,
-      controller: controller,
-      state: state,
-    );
+    showNotificationPanel(context, controller: controller, state: state);
   }
 
   void openReports() {
@@ -140,9 +213,8 @@ class SettingPageHandler {
     if (!context.mounted) {
       return;
     }
-    await Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRoutes.login,
-      (route) => false,
-    );
+    await Navigator.of(
+      context,
+    ).pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
   }
 }
